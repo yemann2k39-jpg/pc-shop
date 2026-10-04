@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
+import { CartProvider } from "@/lib/cart-context";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 
@@ -31,17 +32,19 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col">
-        <a
-          href="#main"
-          className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-zinc-900 focus:px-3 focus:py-1.5 focus:text-sm focus:text-white"
-        >
-          Skip to content
-        </a>
-        <SiteHeader />
-        <main id="main" className="flex flex-1 flex-col">
-          {children}
-        </main>
-        <SiteFooter />
+        <CartProvider>
+          <a
+            href="#main"
+            className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:rounded-md focus:bg-zinc-900 focus:px-3 focus:py-1.5 focus:text-sm focus:text-white"
+          >
+            Skip to content
+          </a>
+          <SiteHeader />
+          <main id="main" className="flex flex-1 flex-col">
+            {children}
+          </main>
+          <SiteFooter />
+        </CartProvider>
       </body>
     </html>
   );

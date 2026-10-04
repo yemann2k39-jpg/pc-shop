@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { CartLink } from "@/components/cart-link";
 import { CATEGORIES } from "@/lib/catalog";
 
 export function SiteHeader() {
@@ -39,6 +40,7 @@ export function SiteHeader() {
             <span aria-hidden="true">⌕</span>
           </button>
         </form>
+        <CartLink />
       </div>
     </header>
   );

@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { AddToCartButton } from "@/components/add-to-cart-button";
 import { ProductCard, STOCK_STYLES } from "@/components/product-card";
 import { FALLBACK_CATEGORY, getCategory } from "@/lib/catalog";
 import { formatPrice, formatSpec, formatSpecKey, STOCK_LABELS } from "@/lib/format";
@@ -87,16 +88,16 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </span>
           </div>
 
-          {/* Wired up by TCK-6 (Cart). aria-disabled keeps the control in the
-              accessibility tree while it is a no-op. */}
-          <button
-            type="button"
-            aria-disabled="true"
-            title="Cart arrives in the next update"
-            className="w-full cursor-not-allowed rounded-lg bg-emerald-600 px-5 py-3 text-sm font-semibold text-white opacity-50 sm:w-auto"
-          >
-            Add to cart
-          </button>
+          <AddToCartButton
+            product={{
+              slug: product.slug,
+              brand: product.brand,
+              model: product.model,
+              imageUrl: product.imageUrl,
+              priceCents: product.priceCents,
+              stockStatus: product.stockStatus,
+            }}
+          />
 
           <div className="rounded-xl border border-zinc-200 bg-white">
             <h2 className="border-b border-zinc-200 px-4 py-3 text-sm font-semibold">
