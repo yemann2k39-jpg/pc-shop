@@ -5,7 +5,7 @@ import type { Product } from "@/db/schema";
 import type { CategoryConfig } from "@/lib/catalog";
 import { formatPrice, formatSpec, formatSpecKey, STOCK_LABELS } from "@/lib/format";
 
-const STOCK_STYLES: Record<Product["stockStatus"], string> = {
+export const STOCK_STYLES: Record<Product["stockStatus"], string> = {
   in_stock: "bg-emerald-50 text-emerald-700 border-emerald-200",
   low_stock: "bg-amber-50 text-amber-700 border-amber-200",
   out_of_stock: "bg-zinc-100 text-zinc-500 border-zinc-200",

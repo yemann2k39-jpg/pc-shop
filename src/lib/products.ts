@@ -1,4 +1,5 @@
-import { and, asc, count, desc, eq, gte, inArray, lte, sql, type SQL } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, lte, ne, sql, type SQL } from "drizzle-orm";
+import { cache } from "react";
 
 import { db } from "@/db";
 import { products, type Product } from "@/db/schema";
@@ -128,13 +129,33 @@ export async function listProducts(
   };
 }
 
-export async function getProductBySlug(slug: string): Promise<Product | undefined> {
+// React cache() dedupes the per-request lookups coming from both
+// generateMetadata and the page component.
+export const getProductBySlug = cache(async (slug: string): Promise<Product | undefined> => {
   const [product] = await db
     .select()
     .from(products)
     .where(eq(products.slug, slug))
     .limit(1);
   return product;
+});
+
+/** Same-category products with the closest price to the given product. */
+export async function getSimilarProducts(
+  product: Product,
+  limit = 4,
+): Promise<Product[]> {
+  return db
+    .select()
+    .from(products)
+    .where(
+      and(eq(products.category, product.category), ne(products.id, product.id)),
+    )
+    .orderBy(
+      sql`ABS(${products.priceCents} - ${product.priceCents})`,
+      asc(products.id),
+    )
+    .limit(limit);
 }
 
 export async function getCategoryProductCounts(): Promise<Map<string, number>> {

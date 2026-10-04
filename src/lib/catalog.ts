@@ -133,3 +133,14 @@ export const CATEGORY_BY_SLUG = new Map(CATEGORIES.map((c) => [c.slug, c]));
 export function getCategory(slug: string): CategoryConfig | undefined {
   return CATEGORY_BY_SLUG.get(slug);
 }
+
+/** Neutral fallback for rows whose category slug is not in the config. */
+export const FALLBACK_CATEGORY: CategoryConfig = {
+  slug: "",
+  name: "Products",
+  tagline: "",
+  accentFrom: "#52525b",
+  accentTo: "#27272a",
+  cardSpecs: [],
+  filters: [],
+};
