@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# PC Shop
 
-## Getting Started
+A PC-parts e-commerce website built with Next.js. Phase 1 is a normal, basic
+shop: browse the catalog, view detailed product pages, search and filter, use a
+cart, and check out with a test-mode payment. More advanced features
+(compatibility checking, performance estimation, an AI assistant) are planned
+for later phases and are intentionally out of scope here.
 
-First, run the development server:
+## Tech stack
+
+- [Next.js](https://nextjs.org) (App Router) + TypeScript
+- [Tailwind CSS](https://tailwindcss.com) v4
+- SQLite via [better-sqlite3](https://github.com/WiseLibs/better-sqlite3) +
+  [Drizzle ORM](https://orm.drizzle.team)
+- [Stripe](https://stripe.com) Checkout in **test mode** for payments
+
+## Prerequisites
+
+- Node.js 20.9+ (Next.js 16 requirement)
+- pnpm 12+
+
+## Getting started
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+pnpm install
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+The SQLite database lives at `data/pc-shop.db` (override the location with the
+`DATABASE_PATH` environment variable). It is created and seeded when the
+catalog lands in the next ticket.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Database commands
 
-## Learn More
+```bash
+pnpm db:generate   # generate SQL migrations from the Drizzle schema
+pnpm db:migrate    # apply migrations to the local database
+pnpm db:seed       # seed the catalog with sample products (lands in TCK-2)
+```
 
-To learn more about Next.js, take a look at the following resources:
+### Payments
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Checkout uses Stripe Checkout in test mode. Put test keys in a `.env.local`
+file (see `.env.example`):
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```
+STRIPE_SECRET_KEY=sk_test_...
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
 
-## Deploy on Vercel
+No real money moves in test mode.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Scripts
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+| Script           | Purpose                                    |
+| ---------------- | ------------------------------------------ |
+| `pnpm dev`       | Start the development server               |
+| `pnpm build`     | Create a production build                  |
+| `pnpm start`     | Serve the production build                 |
+| `pnpm lint`      | Run ESLint                                 |
+| `pnpm db:*`      | Database generation / migration / seeding  |
+
+## Development workflow
+
+This project uses a ticket-driven workflow (`.tickets/` database, managed via
+the `tickets` CLI). Each feature lands as a reviewed, committed ticket.
