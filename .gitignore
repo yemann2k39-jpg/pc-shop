@@ -24,6 +24,9 @@
 .DS_Store
 *.pem
 
+# generated placeholder product images (recreated by `pnpm db:seed`)
+/public/images/products/
+
 # local sqlite database
 /data/
 *.db
