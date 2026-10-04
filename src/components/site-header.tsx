@@ -23,6 +23,22 @@ export function SiteHeader() {
             </Link>
           ))}
         </nav>
+        <form action="/search" role="search" className="flex shrink-0 items-center gap-1">
+          <input
+            type="search"
+            name="q"
+            placeholder="Search parts…"
+            aria-label="Search products"
+            className="w-36 rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-sm focus:border-emerald-600 focus:outline-none md:w-52"
+          />
+          <button
+            type="submit"
+            aria-label="Submit search"
+            className="rounded-full border border-zinc-300 px-2.5 py-1.5 text-sm text-zinc-600 hover:bg-zinc-100"
+          >
+            <span aria-hidden="true">⌕</span>
+          </button>
+        </form>
       </div>
     </header>
   );

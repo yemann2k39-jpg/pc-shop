@@ -1,8 +1,10 @@
 import Link from "next/link";
 
+import { allParams, type RawQuery } from "@/lib/params";
+
 /**
- * Page-number pagination that preserves the current query string and only
- * swaps the `page` parameter.
+ * Page-number pagination that preserves the current query string (including
+ * multi-valued filter params) and only swaps the `page` parameter.
  */
 export function Pagination({
   page,
@@ -12,7 +14,7 @@ export function Pagination({
 }: {
   page: number;
   pageCount: number;
-  params: Record<string, string | undefined>;
+  params: RawQuery;
   basePath: string;
 }) {
   if (pageCount <= 1) return null;
@@ -20,7 +22,10 @@ export function Pagination({
   const hrefFor = (target: number) => {
     const search = new URLSearchParams();
     for (const [key, value] of Object.entries(params)) {
-      if (value !== undefined && key !== "page") search.set(key, value);
+      if (key === "page") continue;
+      for (const item of allParams(value)) {
+        if (item !== "") search.append(key, item);
+      }
     }
     if (target > 1) search.set("page", String(target));
     const query = search.toString();

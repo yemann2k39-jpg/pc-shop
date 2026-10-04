@@ -1,7 +1,8 @@
-import { asc, count, desc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, lte, sql, type SQL } from "drizzle-orm";
 
 import { db } from "@/db";
 import { products, type Product } from "@/db/schema";
+import type { CategoryFilter } from "@/lib/catalog";
 
 export const PRODUCT_SORTS = ["name", "price-asc", "price-desc"] as const;
 export type ProductSort = (typeof PRODUCT_SORTS)[number];
@@ -13,14 +14,30 @@ export const SORT_LABELS: Record<ProductSort, string> = {
 };
 
 export function parseProductSort(value: string | undefined): ProductSort {
-  return PRODUCT_SORTS.includes(value as ProductSort) ? (value as ProductSort) : "name";
+  return (PRODUCT_SORTS as readonly string[]).includes(value ?? "")
+    ? (value as ProductSort)
+    : "name";
 }
+
+export type SpecExactFilter = { key: string; value: string };
+export type SpecMinFilter = { key: string; value: number };
 
 export type ListProductsOptions = {
   category?: string;
   sort?: ProductSort;
   page?: number;
   perPage?: number;
+  /** Restrict to these brands. */
+  brands?: string[];
+  /** Inclusive price bounds in cents. */
+  priceMin?: number;
+  priceMax?: number;
+  /** Exact matches against structured specs (works for scalar and array values). */
+  specExact?: SpecExactFilter[];
+  /** Minimum thresholds against numeric structured specs. */
+  specMin?: SpecMinFilter[];
+  /** Case-insensitive text match against brand + model. */
+  query?: string;
 };
 
 export type ProductListResult = {
@@ -31,6 +48,46 @@ export type ProductListResult = {
   pageCount: number;
 };
 
+function specExactCondition({ key, value }: SpecExactFilter): SQL {
+  // json_each also yields a single row for scalar specs, so this one form
+  // covers both scalar ("socket") and array ("supportedSockets") values.
+  // CAST normalizes JSON numbers/booleans to TEXT so the comparison is
+  // type-affinity-proof.
+  return sql`EXISTS (
+    SELECT 1 FROM json_each(${products.specs}, ${`$.${key}`}) je
+    WHERE CAST(je.value AS TEXT) = ${value}
+  )`;
+}
+
+function specMinCondition({ key, value }: SpecMinFilter): SQL {
+  // Guard with TYPEOF so a numeric threshold never matches text-typed specs.
+  return sql`EXISTS (
+    SELECT 1 FROM json_each(${products.specs}, ${`$.${key}`}) je
+    WHERE TYPEOF(je.value) IN ('integer', 'real') AND je.value >= ${value}
+  )`;
+}
+
+function buildConditions(options: ListProductsOptions): SQL | undefined {
+  const conditions: (SQL | undefined)[] = [];
+
+  if (options.category) conditions.push(eq(products.category, options.category));
+  if (options.brands?.length) conditions.push(inArray(products.brand, options.brands));
+  if (options.priceMin !== undefined) conditions.push(gte(products.priceCents, options.priceMin));
+  if (options.priceMax !== undefined) conditions.push(lte(products.priceCents, options.priceMax));
+  for (const filter of options.specExact ?? []) conditions.push(specExactCondition(filter));
+  for (const filter of options.specMin ?? []) conditions.push(specMinCondition(filter));
+  if (options.query) {
+    // LIKE is case-insensitive for ASCII in SQLite; drop wildcards from input.
+    const needle = `%${options.query.replace(/[%_]/g, " ").trim()}%`;
+    conditions.push(
+      sql`(${products.brand} || ' ' || ${products.model}) LIKE ${needle}`,
+    );
+  }
+
+  const defined = conditions.filter((c): c is SQL => c !== undefined);
+  return defined.length > 0 ? and(...defined) : undefined;
+}
+
 export async function listProducts(
   options: ListProductsOptions = {},
 ): Promise<ProductListResult> {
@@ -38,7 +95,7 @@ export async function listProducts(
   const page = Math.max(1, options.page ?? 1);
   const sort = options.sort ?? "name";
 
-  const where = options.category ? eq(products.category, options.category) : undefined;
+  const where = buildConditions(options);
   // `id` as the final tiebreaker keeps pagination stable when prices repeat.
   const orderBy =
     sort === "price-asc"
@@ -86,4 +143,58 @@ export async function getCategoryProductCounts(): Promise<Map<string, number>> {
     .from(products)
     .groupBy(products.category);
   return new Map(rows.map((row) => [row.category, row.value]));
+}
+
+/* ------------------------------------------------------------------ */
+/* Facets                                                              */
+/* ------------------------------------------------------------------ */
+
+export type FacetValue = { value: string; count: number };
+export type Facet = {
+  key: string;
+  label: string;
+  kind: CategoryFilter["kind"];
+  unit?: string;
+  values: FacetValue[];
+};
+
+export async function getBrandFacet(category: string): Promise<Facet> {
+  const rows = await db
+    .select({ value: products.brand, count: count() })
+    .from(products)
+    .where(eq(products.category, category))
+    .groupBy(products.brand)
+    .orderBy(asc(products.brand));
+  return { key: "brand", label: "Brand", kind: "enum", values: rows };
+}
+
+export async function getSpecFacet(
+  category: string,
+  filter: CategoryFilter,
+): Promise<Facet> {
+  const rows = await db.all<{ value: string | number; count: number }>(sql`
+    SELECT je.value AS value, COUNT(*) AS count
+    FROM products p, json_each(p.specs, ${`$.${filter.key}`}) je
+    WHERE p.category = ${category}
+    GROUP BY je.value
+    ORDER BY je.value
+  `);
+  return {
+    key: filter.key,
+    label: filter.label,
+    kind: filter.kind,
+    unit: filter.kind === "numberMin" ? filter.unit : undefined,
+    values: rows.map((row) => ({ value: String(row.value), count: row.count })),
+  };
+}
+
+export async function getCategoryFacets(
+  category: string,
+  filters: CategoryFilter[],
+): Promise<Facet[]> {
+  const [brandFacet, specFacets] = await Promise.all([
+    getBrandFacet(category),
+    Promise.all(filters.map((filter) => getSpecFacet(category, filter))),
+  ]);
+  return [brandFacet, ...specFacets];
 }

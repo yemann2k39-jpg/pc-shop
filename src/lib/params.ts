@@ -1,9 +1,15 @@
 import type { ProductSort } from "./products";
 
-export function firstParam(
-  value: string | string[] | undefined,
-): string | undefined {
+export type QueryValue = string | string[] | undefined;
+export type RawQuery = Record<string, QueryValue>;
+
+export function firstParam(value: QueryValue): string | undefined {
   return Array.isArray(value) ? value[0] : value;
+}
+
+export function allParams(value: QueryValue): string[] {
+  if (value === undefined) return [];
+  return Array.isArray(value) ? value : [value];
 }
 
 export function parsePageParam(value: string | undefined): number {
@@ -12,26 +18,32 @@ export function parsePageParam(value: string | undefined): number {
 }
 
 /**
- * Builds a category URL that preserves the current query parameters and
- * applies overrides. Canonical params (default sort, page 1) are omitted so
- * URLs stay clean and cache-friendly.
+ * Builds a category URL that preserves the current query parameters
+ * (including multi-valued ones like `brand`) and applies overrides.
+ * Canonical params (default sort, page 1) are omitted so URLs stay clean.
  */
 export function buildCategoryHref(
   slug: string,
-  current: Record<string, string | undefined>,
-  overrides: { sort?: ProductSort; page?: number } = {},
+  current: RawQuery,
+  overrides: { sort?: ProductSort; page?: number; remove?: string[] } = {},
 ): string {
-  const merged: Record<string, string | undefined> = { ...current };
-  if (overrides.sort !== undefined) merged.sort = overrides.sort;
-  if (overrides.page !== undefined) {
-    merged.page = overrides.page > 1 ? String(overrides.page) : undefined;
-  }
-  if (merged.sort === "name") merged.sort = undefined;
-
   const search = new URLSearchParams();
-  for (const [key, value] of Object.entries(merged)) {
-    if (value !== undefined && value !== "") search.set(key, value);
+  const removed = new Set(overrides.remove ?? []);
+
+  for (const [key, value] of Object.entries(current)) {
+    if (key === "sort" || key === "page" || removed.has(key)) continue;
+    for (const item of allParams(value)) {
+      if (item !== "") search.append(key, item);
+    }
   }
+
+  if (overrides.sort !== undefined && overrides.sort !== "name") {
+    search.set("sort", overrides.sort);
+  }
+  if (overrides.page !== undefined && overrides.page > 1) {
+    search.set("page", String(overrides.page));
+  }
+
   const query = search.toString();
   return query ? `/category/${slug}?${query}` : `/category/${slug}`;
 }

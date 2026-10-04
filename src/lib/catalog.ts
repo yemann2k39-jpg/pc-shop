@@ -2,10 +2,15 @@
  * Catalog taxonomy: the fixed set of PC-component categories this shop sells.
  *
  * This config is the single source of truth shared by the seed script, the
- * UI, and (later) the filtering system. Categories are intentionally a
- * code-level enum rather than a database table — the taxonomy is part of the
- * product, not user data.
+ * UI, and the filtering system. Categories are intentionally a code-level
+ * enum rather than a database table — the taxonomy is part of the product,
+ * not user data.
  */
+
+/** A per-category spec filter shown in the listing sidebar. */
+export type CategoryFilter =
+  | { kind: "enum"; key: string; label: string }
+  | { kind: "numberMin"; key: string; label: string; unit?: string };
 
 export type CategoryConfig = {
   /** URL slug, e.g. "cpu" */
@@ -19,6 +24,8 @@ export type CategoryConfig = {
   accentTo: string;
   /** Spec keys shown on product cards, in order. */
   cardSpecs: string[];
+  /** Faceted filters offered on the category page. */
+  filters: CategoryFilter[];
 };
 
 export const CATEGORIES: CategoryConfig[] = [
@@ -29,6 +36,10 @@ export const CATEGORIES: CategoryConfig[] = [
     accentFrom: "#4f46e5",
     accentTo: "#9333ea",
     cardSpecs: ["cores", "threads", "socket"],
+    filters: [
+      { kind: "enum", key: "socket", label: "Socket" },
+      { kind: "numberMin", key: "cores", label: "Cores (min)" },
+    ],
   },
   {
     slug: "gpu",
@@ -37,6 +48,10 @@ export const CATEGORIES: CategoryConfig[] = [
     accentFrom: "#16a34a",
     accentTo: "#0d9488",
     cardSpecs: ["vramGB", "chipset"],
+    filters: [
+      { kind: "enum", key: "chipset", label: "Chipset" },
+      { kind: "numberMin", key: "vramGB", label: "VRAM (min)", unit: "GB" },
+    ],
   },
   {
     slug: "motherboard",
@@ -45,6 +60,11 @@ export const CATEGORIES: CategoryConfig[] = [
     accentFrom: "#0284c7",
     accentTo: "#4f46e5",
     cardSpecs: ["socket", "formFactor"],
+    filters: [
+      { kind: "enum", key: "socket", label: "Socket" },
+      { kind: "enum", key: "formFactor", label: "Form factor" },
+      { kind: "enum", key: "memoryType", label: "Memory type" },
+    ],
   },
   {
     slug: "ram",
@@ -53,6 +73,10 @@ export const CATEGORIES: CategoryConfig[] = [
     accentFrom: "#d97706",
     accentTo: "#dc2626",
     cardSpecs: ["capacityGB", "speedMHz"],
+    filters: [
+      { kind: "enum", key: "memoryType", label: "Memory type" },
+      { kind: "numberMin", key: "capacityGB", label: "Capacity (min)", unit: "GB" },
+    ],
   },
   {
     slug: "storage",
@@ -61,6 +85,10 @@ export const CATEGORIES: CategoryConfig[] = [
     accentFrom: "#0891b2",
     accentTo: "#2563eb",
     cardSpecs: ["driveType", "capacityGB"],
+    filters: [
+      { kind: "enum", key: "driveType", label: "Drive type" },
+      { kind: "numberMin", key: "capacityGB", label: "Capacity (min)", unit: "GB" },
+    ],
   },
   {
     slug: "psu",
@@ -69,6 +97,10 @@ export const CATEGORIES: CategoryConfig[] = [
     accentFrom: "#ca8a04",
     accentTo: "#ea580c",
     cardSpecs: ["wattageW", "efficiencyCert"],
+    filters: [
+      { kind: "numberMin", key: "wattageW", label: "Wattage (min)", unit: "W" },
+      { kind: "enum", key: "efficiencyCert", label: "Efficiency" },
+    ],
   },
   {
     slug: "cooler",
@@ -77,6 +109,10 @@ export const CATEGORIES: CategoryConfig[] = [
     accentFrom: "#059669",
     accentTo: "#16a34a",
     cardSpecs: ["coolerType", "tdpRatingW"],
+    filters: [
+      { kind: "enum", key: "coolerType", label: "Cooler type" },
+      { kind: "numberMin", key: "tdpRatingW", label: "Rated TDP (min)", unit: "W" },
+    ],
   },
   {
     slug: "case",
@@ -85,6 +121,10 @@ export const CATEGORIES: CategoryConfig[] = [
     accentFrom: "#475569",
     accentTo: "#0f172a",
     cardSpecs: ["formFactorSupport", "maxGpuLengthMm"],
+    filters: [
+      { kind: "enum", key: "formFactorSupport", label: "Supports" },
+      { kind: "numberMin", key: "maxGpuLengthMm", label: "Max GPU length (min)", unit: "mm" },
+    ],
   },
 ];
 
