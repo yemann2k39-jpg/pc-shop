@@ -38,3 +38,44 @@ export const products = sqliteTable(
 
 export type Product = typeof products.$inferSelect;
 export type NewProduct = typeof products.$inferInsert;
+
+/* ------------------------------- Orders -------------------------------- */
+
+export const ORDER_STATUSES = ["pending", "paid", "cancelled"] as const;
+export type OrderStatus = (typeof ORDER_STATUSES)[number];
+
+/** Line-item snapshot stored on the order (prices at purchase time). */
+export type OrderItem = {
+  slug: string;
+  brand: string;
+  model: string;
+  imageUrl: string;
+  unitPriceCents: number;
+  qty: number;
+};
+
+export const orders = sqliteTable(
+  "orders",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    orderNumber: text("order_number").notNull().unique(),
+    status: text("status").$type<OrderStatus>().notNull().default("pending"),
+    customerName: text("customer_name").notNull(),
+    customerEmail: text("customer_email").notNull(),
+    shippingAddress: text("shipping_address").notNull(),
+    shippingCity: text("shipping_city").notNull(),
+    shippingPostalCode: text("shipping_postal_code").notNull(),
+    shippingCountry: text("shipping_country").notNull(),
+    items: text("items", { mode: "json" }).$type<OrderItem[]>().notNull(),
+    subtotalCents: integer("subtotal_cents").notNull(),
+    /** Set by the payment provider when a checkout session is created. */
+    paymentSessionId: text("payment_session_id"),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => [index("orders_session_idx").on(table.paymentSessionId)],
+);
+
+export type Order = typeof orders.$inferSelect;
+export type NewOrder = typeof orders.$inferInsert;

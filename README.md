@@ -37,20 +37,27 @@ catalog lands in the next ticket.
 ```bash
 pnpm db:generate   # generate SQL migrations from the Drizzle schema
 pnpm db:migrate    # apply migrations to the local database
-pnpm db:seed       # seed the catalog with sample products (lands in TCK-2)
+pnpm db:seed       # seed the catalog with sample products
 ```
 
 ### Payments
 
-Checkout uses Stripe Checkout in test mode. Put test keys in a `.env.local`
-file (see `.env.example`):
+The payment gateway sits behind a thin provider interface
+(`src/lib/payments/`) with two implementations:
 
-```
-STRIPE_SECRET_KEY=sk_test_...
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-```
+- **Stripe Checkout (test mode)** — active when `STRIPE_SECRET_KEY` is set in
+  `.env.local` (see `.env.example`; keys come from the Stripe dashboard).
+- **Mock gateway** — used automatically when no keys are configured. Checkout
+  redirects to a local fake payment page (`/checkout/mock`) where you can
+  approve or decline the payment. Zero setup required.
 
-No real money moves in test mode.
+Either way, no real money moves.
+
+> **Known trade-off:** in Stripe mode, payment confirmation is verified when
+> the customer returns to `/order/[orderNumber]` (session checked server-side).
+> A production shop would additionally use a Stripe webhook so
+> pay-then-close-the-tab orders still get confirmed — left out of phase 1 to
+> avoid requiring a public webhook endpoint.
 
 ## Scripts
 
