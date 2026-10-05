@@ -8,7 +8,7 @@ export function SiteHeader() {
     <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-8 px-4">
         <Link href="/" className="shrink-0 text-lg font-bold tracking-tight">
-          PC<span className="text-emerald-600">Shop</span>
+          PC<span className="text-blue-700">Shop</span>
         </Link>
         <nav
           aria-label="Product categories"
@@ -30,7 +30,7 @@ export function SiteHeader() {
             name="q"
             placeholder="Search parts…"
             aria-label="Search products"
-            className="w-36 rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-sm focus:border-emerald-600 focus:outline-none md:w-52"
+            className="w-36 rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-sm focus:border-blue-600 focus:outline-none md:w-52"
           />
           <button
             type="submit"

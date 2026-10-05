@@ -86,7 +86,7 @@ export function AddToCartButton({
           ? "w-full cursor-not-allowed rounded-lg border border-zinc-200 bg-zinc-50 px-5 py-3 text-sm font-semibold text-zinc-400 sm:w-auto"
           : justAdded
             ? "w-full rounded-lg bg-emerald-700 px-5 py-3 text-sm font-semibold text-white sm:w-auto"
-            : "w-full rounded-lg bg-emerald-600 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-700 sm:w-auto"
+            : "w-full rounded-lg bg-blue-700 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-800 sm:w-auto"
       }
     >
       {soldOut ? STOCK_LABELS.out_of_stock : justAdded ? "Added to cart ✓" : "Add to cart"}

@@ -120,7 +120,7 @@ export default function CheckoutPage() {
                               ? "country-name"
                               : "address-level2"
                   }
-                  className="rounded-md border border-zinc-300 px-3 py-2 focus:border-emerald-600 focus:outline-none"
+                  className="rounded-md border border-zinc-300 px-3 py-2 focus:border-blue-600 focus:outline-none"
                 />
               </label>
             ))}
@@ -135,7 +135,7 @@ export default function CheckoutPage() {
           <button
             type="submit"
             disabled={submitting || !isLoaded || items.length === 0}
-            className="mt-4 w-full rounded-lg bg-emerald-600 px-4 py-3 text-sm font-semibold text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+            className="mt-4 w-full rounded-lg bg-blue-700 px-4 py-3 text-sm font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {submitting ? "Starting payment…" : "Pay now"}
           </button>

@@ -16,7 +16,7 @@ export default async function Home() {
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-10">
       <section className="flex flex-col items-center gap-4 py-10 text-center">
-        <span className="rounded-full border border-emerald-600/20 bg-emerald-600/10 px-3 py-1 text-xs font-medium tracking-wide text-emerald-700 uppercase">
+        <span className="rounded-full border border-blue-600/20 bg-blue-600/10 px-3 py-1 text-xs font-medium tracking-wide text-blue-700 uppercase">
           PC Shop
         </span>
         <h1 className="max-w-2xl text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
@@ -50,7 +50,7 @@ export default async function Home() {
                 />
               </div>
               <div className="p-4">
-                <h3 className="font-semibold text-zinc-900 group-hover:text-emerald-700">
+                <h3 className="font-semibold text-zinc-900 group-hover:text-blue-700">
                   {category.name}
                 </h3>
                 <p className="mt-0.5 text-sm text-zinc-500">{category.tagline}</p>

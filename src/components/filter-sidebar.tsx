@@ -49,7 +49,7 @@ export function FilterSidebar({
               sort: sort === "name" ? undefined : (sort as ProductSort),
               remove: sidebarParamKeys(facets).concat("priceMin", "priceMax"),
             })}
-            className="text-xs font-medium text-emerald-700 hover:underline"
+            className="text-xs font-medium text-blue-700 hover:underline"
           >
             Clear all ({activeFilterCount})
           </Link>
@@ -72,7 +72,7 @@ export function FilterSidebar({
                   name="brand"
                   value={option.value}
                   defaultChecked={allParams(query.brand).includes(option.value)}
-                  className="h-4 w-4 rounded border-zinc-300 accent-emerald-600"
+                  className="h-4 w-4 rounded border-zinc-300 accent-blue-700"
                 />
                 {option.value}
                 <span className="text-xs text-zinc-400">({option.count})</span>

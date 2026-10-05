@@ -46,7 +46,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       <h1 className="text-2xl font-semibold tracking-tight">
         {q ? (
           <>
-            Results for <span className="text-emerald-700">“{q}”</span>
+            Results for <span className="text-blue-700">“{q}”</span>
           </>
         ) : (
           "Search"
@@ -62,7 +62,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               defaultValue={q}
               placeholder="Search parts…"
               aria-label="Search products"
-              className="w-full rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm focus:border-emerald-600 focus:outline-none"
+              className="w-full rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm focus:border-blue-600 focus:outline-none"
             />
             <button
               type="submit"

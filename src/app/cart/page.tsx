@@ -126,7 +126,7 @@ export default function CartPage() {
                     </p>
                     <Link
                       href={`/product/${item.slug}`}
-                      className="text-sm font-semibold text-zinc-900 hover:text-emerald-700"
+                      className="text-sm font-semibold text-zinc-900 hover:text-blue-700"
                     >
                       <span className="line-clamp-2">{item.model}</span>
                     </Link>
@@ -195,7 +195,7 @@ export default function CartPage() {
             </dl>
             <Link
               href="/checkout"
-              className="mt-4 block rounded-lg bg-emerald-600 px-4 py-3 text-center text-sm font-semibold text-white hover:bg-emerald-700"
+              className="mt-4 block rounded-lg bg-blue-700 px-4 py-3 text-center text-sm font-semibold text-white hover:bg-blue-800"
             >
               Proceed to checkout
             </Link>
