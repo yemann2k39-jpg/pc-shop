@@ -325,7 +325,7 @@ function escapeXml(value: string): string {
 
 function productSvg(categorySlug: string, brand: string, model: string): string {
   const category = getCategory(categorySlug) ?? FALLBACK_CATEGORY;
-  const illustration = categoryIllustration(categorySlug) ?? "";
+  const illustration = categoryIllustration(categorySlug, category.accent) ?? "";
   // Truncate long model names so they fit the fixed 640x480 canvas
   // (strip dangling separators left by the slice).
   const modelLine =
@@ -337,7 +337,7 @@ function productSvg(categorySlug: string, brand: string, model: string): string 
   <rect width="640" height="480" fill="#ffffff"/>
   <rect x="0.5" y="0.5" width="639" height="479" fill="none" stroke="#e4e4e7"/>
   <g transform="translate(200,70)" ${ILLUSTRATION_ATTRS}>${illustration}</g>
-  <text x="320" y="330" text-anchor="middle" font-family="system-ui, sans-serif" font-size="15" font-weight="600" letter-spacing="3" fill="#059669">${escapeXml(category.name.toUpperCase())}</text>
+  <text x="320" y="330" text-anchor="middle" font-family="system-ui, sans-serif" font-size="15" font-weight="600" letter-spacing="3" fill="${category.accent}">${escapeXml(category.name.toUpperCase())}</text>
   <text x="320" y="368" text-anchor="middle" font-family="system-ui, sans-serif" font-size="32" font-weight="600" fill="#18181b">${escapeXml(brand)}</text>
   <text x="320" y="406" text-anchor="middle" font-family="system-ui, sans-serif" font-size="24" fill="#52525b">${escapeXml(modelLine)}</text>
 </svg>
@@ -345,8 +345,8 @@ function productSvg(categorySlug: string, brand: string, model: string): string 
 }
 
 /** Standalone illustration tile used on the home page (transparent bg). */
-function categorySvg(categorySlug: string): string {
-  const illustration = categoryIllustration(categorySlug) ?? "";
+function categorySvg(categorySlug: string, accent: string): string {
+  const illustration = categoryIllustration(categorySlug, accent) ?? "";
   return `<svg xmlns="http://www.w3.org/2000/svg" width="240" height="180" viewBox="0 0 240 180" aria-hidden="true">
   <g ${ILLUSTRATION_ATTRS}>${illustration}</g>
 </svg>
@@ -380,7 +380,8 @@ if (!tableExists) {
 // Fail fast on bad category slugs or missing illustrations before touching
 // the database.
 for (const product of PRODUCTS) {
-  if (!getCategory(product.category) || !categoryIllustration(product.category)) {
+  const category = getCategory(product.category);
+  if (!category || !categoryIllustration(product.category, category.accent)) {
     console.error(
       `Unknown category "${product.category}" for product ${product.brand} ${product.model}. ` +
         `Valid slugs: ${CATEGORIES.map((c) => c.slug).join(", ")}`,
@@ -435,7 +436,7 @@ mkdirSync(categoryDir, { recursive: true });
 for (const category of CATEGORIES) {
   writeFileSync(
     path.join(categoryDir, `${category.slug}.svg`),
-    categorySvg(category.slug),
+    categorySvg(category.slug, category.accent),
   );
 }
 

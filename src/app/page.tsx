@@ -39,7 +39,9 @@ export default async function Home() {
               href={`/category/${category.slug}`}
               className="group overflow-hidden rounded-xl border border-zinc-200 bg-white transition-shadow hover:shadow-md"
             >
-              <div className="flex h-20 items-center justify-center border-b border-zinc-200 bg-zinc-50">
+              <div
+                className={`flex h-20 items-center justify-center border-b border-zinc-200 ${category.tileClass}`}
+              >
                 <Image
                   src={`/images/categories/${category.slug}.svg`}
                   alt=""
