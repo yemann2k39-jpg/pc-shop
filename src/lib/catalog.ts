@@ -19,7 +19,7 @@ export type CategoryConfig = {
   name: string;
   /** One-line description used on the home page. */
   tagline: string;
-  /** Gradient colors used for generated placeholder images. */
+  /** Gradient colors used for the home page category banner. */
   accentFrom: string;
   accentTo: string;
   /** Spec keys shown on product cards, in order. */
