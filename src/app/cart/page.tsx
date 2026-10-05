@@ -43,7 +43,7 @@ function QtyInput({ item }: { item: CartItem }) {
         setDraft(String(clamped));
       }}
       aria-label={`Quantity of ${item.brand} ${item.model}`}
-      className="h-8 w-12 rounded-md border border-line bg-raised text-center text-sm text-ink [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+      className="h-8 w-12 rounded-md border border-zinc-300 text-center text-sm [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
     />
   );
 }
@@ -54,8 +54,8 @@ export default function CartPage() {
   if (!isLoaded) {
     return (
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">Cart</h1>
-        <p className="mt-4 text-sm text-ink-dim">Loading your cart…</p>
+        <h1 className="text-2xl font-semibold tracking-tight">Cart</h1>
+        <p className="mt-4 text-sm text-zinc-500">Loading your cart…</p>
       </div>
     );
   }
@@ -63,15 +63,15 @@ export default function CartPage() {
   if (items.length === 0) {
     return (
       <div className="mx-auto w-full max-w-6xl px-4 py-8">
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">Cart</h1>
-        <div className="mt-6 rounded-xl border border-dashed border-line bg-surface p-12 text-center">
-          <p className="font-medium text-ink">Your cart is empty</p>
-          <p className="mt-1 text-sm text-ink-dim">
+        <h1 className="text-2xl font-semibold tracking-tight">Cart</h1>
+        <div className="mt-6 rounded-xl border border-dashed border-zinc-300 bg-white p-12 text-center">
+          <p className="font-medium text-zinc-700">Your cart is empty</p>
+          <p className="mt-1 text-sm text-zinc-500">
             Browse the catalog and add some parts.
           </p>
           <Link
             href="/"
-            className="mt-4 inline-block rounded-lg bg-accent-strong px-4 py-2 text-sm font-medium text-white hover:bg-accent-strong/90"
+            className="mt-4 inline-block rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
           >
             Browse products
           </Link>
@@ -83,16 +83,16 @@ export default function CartPage() {
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">
+        <h1 className="text-2xl font-semibold tracking-tight">
           Cart{" "}
-          <span className="text-base font-normal text-ink-faint">
+          <span className="text-base font-normal text-zinc-500">
             ({items.length} {items.length === 1 ? "item" : "items"})
           </span>
         </h1>
         <button
           type="button"
           onClick={clear}
-          className="text-sm font-medium text-ink-faint hover:text-status-danger"
+          className="text-sm font-medium text-zinc-500 hover:text-red-600"
         >
           Clear cart
         </button>
@@ -103,11 +103,11 @@ export default function CartPage() {
           {items.map((item) => (
             <li
               key={item.slug}
-              className="flex gap-4 rounded-xl border border-line bg-surface p-4"
+              className="flex gap-4 rounded-xl border border-zinc-200 bg-white p-4"
             >
               <Link
                 href={`/product/${item.slug}`}
-                className="relative aspect-[4/3] w-28 shrink-0 overflow-hidden rounded-lg bg-raised"
+                className="relative aspect-[4/3] w-28 shrink-0 overflow-hidden rounded-lg bg-zinc-50"
               >
                 <Image
                   src={item.imageUrl}
@@ -121,12 +121,12 @@ export default function CartPage() {
               <div className="flex min-w-0 flex-1 flex-col gap-2">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="text-xs font-medium tracking-wide text-ink-faint uppercase">
+                    <p className="text-xs font-medium tracking-wide text-zinc-500 uppercase">
                       {item.brand}
                     </p>
                     <Link
                       href={`/product/${item.slug}`}
-                      className="text-sm font-semibold text-ink hover:text-accent"
+                      className="text-sm font-semibold text-zinc-900 hover:text-emerald-700"
                     >
                       <span className="line-clamp-2">{item.model}</span>
                     </Link>
@@ -135,7 +135,7 @@ export default function CartPage() {
                     type="button"
                     onClick={() => remove(item.slug)}
                     aria-label={`Remove ${item.brand} ${item.model} from cart`}
-                    className="shrink-0 text-sm text-ink-faint hover:text-status-danger"
+                    className="shrink-0 text-sm text-zinc-400 hover:text-red-600"
                   >
                     Remove
                   </button>
@@ -146,7 +146,7 @@ export default function CartPage() {
                       type="button"
                       onClick={() => setQty(item.slug, item.qty - 1)}
                       aria-label={`Decrease quantity of ${item.brand} ${item.model}`}
-                      className="h-8 w-8 rounded-md border border-line text-lg leading-none text-ink-dim hover:bg-raised hover:text-ink"
+                      className="h-8 w-8 rounded-md border border-zinc-300 text-lg leading-none text-zinc-600 hover:bg-zinc-100"
                     >
                       −
                     </button>
@@ -155,17 +155,17 @@ export default function CartPage() {
                       type="button"
                       onClick={() => setQty(item.slug, item.qty + 1)}
                       aria-label={`Increase quantity of ${item.brand} ${item.model}`}
-                      className="h-8 w-8 rounded-md border border-line text-lg leading-none text-ink-dim hover:bg-raised hover:text-ink"
+                      className="h-8 w-8 rounded-md border border-zinc-300 text-lg leading-none text-zinc-600 hover:bg-zinc-100"
                     >
                       +
                     </button>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-bold text-ink">
+                    <p className="text-sm font-bold text-zinc-900">
                       {formatPrice(item.priceCents * item.qty)}
                     </p>
                     {item.qty > 1 ? (
-                      <p className="text-xs text-ink-faint">
+                      <p className="text-xs text-zinc-400">
                         {formatPrice(item.priceCents)} each
                       </p>
                     ) : null}
@@ -177,31 +177,29 @@ export default function CartPage() {
         </ul>
 
         <aside className="lg:w-80 lg:shrink-0">
-          <div className="rounded-xl border border-line bg-surface p-4">
-            <h2 className="text-sm font-semibold text-ink">Order summary</h2>
+          <div className="rounded-xl border border-zinc-200 bg-white p-4">
+            <h2 className="text-sm font-semibold">Order summary</h2>
             <dl className="mt-3 space-y-2 text-sm">
               <div className="flex justify-between">
-                <dt className="text-ink-dim">Subtotal</dt>
-                <dd className="font-medium text-ink">
-                  {formatPrice(subtotalCents)}
-                </dd>
+                <dt className="text-zinc-500">Subtotal</dt>
+                <dd className="font-medium">{formatPrice(subtotalCents)}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-ink-dim">Shipping</dt>
-                <dd className="text-ink-faint">Calculated at checkout</dd>
+                <dt className="text-zinc-500">Shipping</dt>
+                <dd className="text-zinc-500">Calculated at checkout</dd>
               </div>
-              <div className="flex justify-between border-t border-line pt-2 text-base font-bold">
-                <dt className="text-ink">Total</dt>
-                <dd className="text-ink">{formatPrice(subtotalCents)}</dd>
+              <div className="flex justify-between border-t border-zinc-200 pt-2 text-base font-bold">
+                <dt>Total</dt>
+                <dd>{formatPrice(subtotalCents)}</dd>
               </div>
             </dl>
             <Link
               href="/checkout"
-              className="mt-4 block rounded-lg bg-accent-strong px-4 py-3 text-center text-sm font-semibold text-white hover:bg-accent-strong/90"
+              className="mt-4 block rounded-lg bg-emerald-600 px-4 py-3 text-center text-sm font-semibold text-white hover:bg-emerald-700"
             >
               Proceed to checkout
             </Link>
-            <p className="mt-2 text-center text-xs text-ink-faint">
+            <p className="mt-2 text-center text-xs text-zinc-400">
               Demo shop — test payment only.
             </p>
           </div>

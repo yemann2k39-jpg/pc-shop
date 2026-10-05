@@ -12,7 +12,7 @@ export function CartLink() {
     <Link
       href="/cart"
       aria-label={`Cart${totalQty > 0 ? `, ${totalQty} item${totalQty === 1 ? "" : "s"}` : ""}`}
-      className="relative flex shrink-0 items-center rounded-full border border-line px-3 py-1.5 text-sm text-ink-dim hover:bg-raised hover:text-ink"
+      className="relative flex shrink-0 items-center rounded-full border border-zinc-300 px-3 py-1.5 text-sm text-zinc-700 hover:bg-zinc-100"
     >
       <svg
         aria-hidden="true"
@@ -32,7 +32,7 @@ export function CartLink() {
       {isLoaded && totalQty > 0 ? (
         <span
           aria-hidden="true"
-          className="absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-accent-strong px-1 text-[11px] font-bold text-white"
+          className="absolute -top-1.5 -right-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-emerald-600 px-1 text-[11px] font-bold text-white"
         >
           {totalQty > 99 ? "99+" : totalQty}
         </span>

@@ -35,18 +35,18 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8">
-      <nav aria-label="Breadcrumb" className="mb-4 text-sm text-ink-faint">
-        <Link href="/" className="text-ink-dim hover:text-ink">
+      <nav aria-label="Breadcrumb" className="mb-4 text-sm text-zinc-500">
+        <Link href="/" className="hover:text-zinc-800">
           Home
         </Link>
         <span className="mx-1.5">/</span>
-        <span className="font-medium text-ink">Search</span>
+        <span className="font-medium text-zinc-800">Search</span>
       </nav>
 
-      <h1 className="text-2xl font-semibold tracking-tight text-ink">
+      <h1 className="text-2xl font-semibold tracking-tight">
         {q ? (
           <>
-            Results for <span className="text-accent">“{q}”</span>
+            Results for <span className="text-emerald-700">“{q}”</span>
           </>
         ) : (
           "Search"
@@ -62,22 +62,22 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               defaultValue={q}
               placeholder="Search parts…"
               aria-label="Search products"
-              className="w-full rounded-full border border-line bg-raised px-4 py-2 text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none"
+              className="w-full rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm focus:border-emerald-600 focus:outline-none"
             />
             <button
               type="submit"
-              className="rounded-full bg-accent-strong px-4 py-2 text-sm font-medium text-white hover:bg-accent-strong/90"
+              className="rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
             >
               Search
             </button>
           </form>
-          <p className="mt-3 text-sm text-ink-dim">
+          <p className="mt-3 text-sm text-zinc-500">
             Type a brand, model, or part name — for example “Ryzen” or “RTX”.
           </p>
         </>
       ) : (
         <>
-          <p className="mt-1 text-sm text-ink-dim">
+          <p className="mt-1 text-sm text-zinc-500">
             {result.total} {result.total === 1 ? "product" : "products"} found
           </p>
 
@@ -112,9 +112,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               </div>
             </>
           ) : (
-            <div className="mt-6 rounded-xl border border-dashed border-line bg-surface p-12 text-center">
-              <p className="font-medium text-ink">Nothing found</p>
-              <p className="mt-1 text-sm text-ink-dim">
+            <div className="mt-6 rounded-xl border border-dashed border-zinc-300 bg-white p-12 text-center">
+              <p className="font-medium text-zinc-700">Nothing found</p>
+              <p className="mt-1 text-sm text-zinc-500">
                 Check the spelling or try a broader term.
               </p>
             </div>

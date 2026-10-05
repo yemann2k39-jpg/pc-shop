@@ -5,20 +5,20 @@ import { CATEGORIES } from "@/lib/catalog";
 
 export function SiteHeader() {
   return (
-    <header className="sticky top-0 z-40 border-b border-line bg-surface">
-      <div className="mx-auto flex h-16 max-w-6xl items-center gap-6 px-4">
-        <Link href="/" className="shrink-0 text-lg font-bold tracking-tight text-ink">
-          PC<span className="text-accent">Shop</span>
+    <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white/95 backdrop-blur">
+      <div className="mx-auto flex h-16 max-w-6xl items-center gap-8 px-4">
+        <Link href="/" className="shrink-0 text-lg font-bold tracking-tight">
+          PC<span className="text-emerald-600">Shop</span>
         </Link>
         <nav
           aria-label="Product categories"
-          className="scrollbar-none flex flex-1 items-center gap-1 overflow-x-auto text-sm font-medium text-ink-dim"
+          className="scrollbar-none flex flex-1 items-center gap-1 overflow-x-auto text-sm font-medium text-zinc-600"
         >
           {CATEGORIES.map((category) => (
             <Link
               key={category.slug}
               href={`/category/${category.slug}`}
-              className="shrink-0 rounded-full px-3 py-1.5 transition-colors hover:bg-raised hover:text-ink"
+              className="shrink-0 rounded-full px-3 py-1.5 transition-colors hover:bg-zinc-100 hover:text-zinc-900"
             >
               {category.name}
             </Link>
@@ -30,12 +30,12 @@ export function SiteHeader() {
             name="q"
             placeholder="Search parts…"
             aria-label="Search products"
-            className="w-36 rounded-full border border-line bg-raised px-3 py-1.5 text-sm text-ink placeholder:text-ink-faint focus:border-accent focus:outline-none md:w-52"
+            className="w-36 rounded-full border border-zinc-300 bg-white px-3 py-1.5 text-sm focus:border-emerald-600 focus:outline-none md:w-52"
           />
           <button
             type="submit"
             aria-label="Submit search"
-            className="rounded-full border border-line px-2.5 py-1.5 text-sm text-ink-dim hover:bg-raised hover:text-ink"
+            className="rounded-full border border-zinc-300 px-2.5 py-1.5 text-sm text-zinc-600 hover:bg-zinc-100"
           >
             <span aria-hidden="true">⌕</span>
           </button>

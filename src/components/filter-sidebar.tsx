@@ -36,20 +36,20 @@ export function FilterSidebar({
     <form
       method="get"
       action={`/category/${slug}`}
-      className="space-y-6 rounded-xl border border-line bg-surface p-4"
+      className="space-y-6 rounded-xl border border-zinc-200 bg-white p-4"
       aria-label="Filter products"
     >
       {sort !== "name" ? <input type="hidden" name="sort" value={sort} /> : null}
 
       <div className="flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-ink">Filters</h2>
+        <h2 className="text-sm font-semibold text-zinc-900">Filters</h2>
         {activeFilterCount > 0 ? (
           <Link
             href={buildCategoryHref(slug, query, {
               sort: sort === "name" ? undefined : (sort as ProductSort),
               remove: sidebarParamKeys(facets).concat("priceMin", "priceMax"),
             })}
-            className="text-xs font-medium text-accent hover:underline"
+            className="text-xs font-medium text-emerald-700 hover:underline"
           >
             Clear all ({activeFilterCount})
           </Link>
@@ -59,29 +59,29 @@ export function FilterSidebar({
       {facets.map((facet) =>
         facet.key === "brand" ? (
           <fieldset key={facet.key} className="space-y-2">
-            <legend className="text-xs font-medium tracking-wide text-ink-faint uppercase">
+            <legend className="text-xs font-medium tracking-wide text-zinc-500 uppercase">
               {facet.label}
             </legend>
             {facet.values.map((option) => (
               <label
                 key={option.value}
-                className="flex items-center gap-2 text-sm text-ink-dim"
+                className="flex items-center gap-2 text-sm text-zinc-700"
               >
                 <input
                   type="checkbox"
                   name="brand"
                   value={option.value}
                   defaultChecked={allParams(query.brand).includes(option.value)}
-                  className="h-4 w-4 rounded border-line bg-raised accent-accent"
+                  className="h-4 w-4 rounded border-zinc-300 accent-emerald-600"
                 />
                 {option.value}
-                <span className="text-xs text-ink-faint">({option.count})</span>
+                <span className="text-xs text-zinc-400">({option.count})</span>
               </label>
             ))}
           </fieldset>
         ) : (
           <fieldset key={facet.key} className="space-y-1">
-            <legend className="text-xs font-medium tracking-wide text-ink-faint uppercase">
+            <legend className="text-xs font-medium tracking-wide text-zinc-500 uppercase">
               {facet.label}
             </legend>
             <select
@@ -91,7 +91,7 @@ export function FilterSidebar({
                   query[facet.kind === "numberMin" ? `min_${facet.key}` : facet.key],
                 ) ?? ""
               }
-              className="w-full rounded-md border border-line bg-raised px-2 py-1.5 text-sm text-ink"
+              className="w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm"
             >
               <option value="">Any</option>
               {facet.values.map((option) => (
@@ -107,7 +107,7 @@ export function FilterSidebar({
       )}
 
       <fieldset className="space-y-2">
-        <legend className="text-xs font-medium tracking-wide text-ink-faint uppercase">
+        <legend className="text-xs font-medium tracking-wide text-zinc-500 uppercase">
           Price (USD)
         </legend>
         <div className="flex items-center gap-2">
@@ -118,10 +118,10 @@ export function FilterSidebar({
             step="any"
             placeholder="Min"
             defaultValue={firstParam(query.priceMin) ?? ""}
-            className="w-full rounded-md border border-line bg-raised px-2 py-1.5 text-sm text-ink placeholder:text-ink-faint"
+            className="w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm"
             aria-label="Minimum price"
           />
-          <span className="text-ink-faint">–</span>
+          <span className="text-zinc-400">–</span>
           <input
             type="number"
             name="priceMax"
@@ -129,7 +129,7 @@ export function FilterSidebar({
             step="any"
             placeholder="Max"
             defaultValue={firstParam(query.priceMax) ?? ""}
-            className="w-full rounded-md border border-line bg-raised px-2 py-1.5 text-sm text-ink placeholder:text-ink-faint"
+            className="w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm"
             aria-label="Maximum price"
           />
         </div>
@@ -137,7 +137,7 @@ export function FilterSidebar({
 
       <button
         type="submit"
-        className="w-full rounded-lg bg-accent-strong px-3 py-2 text-sm font-medium text-white hover:bg-accent-strong/90"
+        className="w-full rounded-lg bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-700"
       >
         Apply filters
       </button>

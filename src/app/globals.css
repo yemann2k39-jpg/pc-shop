@@ -1,63 +1,20 @@
 @import "tailwindcss";
 
-/* Render dark-native form controls (selects, inputs, scrollbars). */
-:root {
-  color-scheme: dark;
-}
-
 @theme inline {
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-/*
- * Dark theme palette. Flat, layered surfaces with hairline borders —
- * contrast comes from elevation and text hierarchy, not decoration.
- * The accent (steel blue) is reserved for CTAs, links, and badges;
- * green/amber appear only as semantic status colors.
- */
-@theme {
-  /* Surfaces */
-  --color-page: #0b0d10;
-  --color-surface: #14171c;
-  --color-raised: #1b2027;
-
-  /* Hairlines */
-  --color-line: #262c34;
-  --color-line-strong: #3a424e;
-
-  /* Text tiers */
-  --color-ink: #f3f5f7;
-  --color-ink-dim: #9aa4af;
-  /* Below AA for body copy — decorative/meta/placeholder use only. */
-  --color-ink-faint: #68717d;
-
-  /* Accent: steel blue. Filled CTAs use bg-accent-strong + white text
-     (bg-accent + white is ~3.1:1); `accent` itself is for links, borders,
-     icons, and large text. */
-  --color-accent: #5b93e6;
-  --color-accent-strong: #2f6acb;
-
-  /* Semantic status colors (stock, payment states). */
-  --color-status-success: #34d399;
-  --color-status-warning: #fbbf24;
-  --color-status-danger: #f87171;
-}
-
 @layer base {
   body {
-    background-color: var(--color-page);
-    color: var(--color-ink);
-    font-family: var(--font-sans);
-  }
-
-  ::selection {
-    background: color-mix(in srgb, var(--color-accent) 35%, transparent);
+    background: #fafafa;
+    color: #18181b;
+    font-family: var(--font-sans), Arial, Helvetica, sans-serif;
   }
 }
 
 /* Hide the horizontal scrollbar on the category nav (scrolling itself stays
-   available via touch/shift-wheel; scrollbars render dark via color-scheme). */
+   available via touch/shift-wheel). */
 @utility scrollbar-none {
   scrollbar-width: none;
   &::-webkit-scrollbar {
