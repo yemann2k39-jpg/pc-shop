@@ -61,10 +61,10 @@ export function AddToCartButton({
         aria-label={`Add to cart: ${product.brand} ${product.model}`}
         className={
           soldOut
-            ? "cursor-not-allowed rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium text-zinc-400"
+            ? "cursor-not-allowed rounded-lg border border-line bg-raised px-3 py-1.5 text-xs font-medium text-ink-faint"
             : justAdded
-              ? "rounded-lg bg-emerald-700 px-3 py-1.5 text-xs font-medium text-white"
-              : "rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-zinc-700"
+              ? "rounded-lg bg-status-success px-3 py-1.5 text-xs font-semibold text-page"
+              : "rounded-lg bg-accent-strong px-3 py-1.5 text-xs font-medium text-white hover:bg-accent-strong/90"
         }
       >
         {soldOut
@@ -83,10 +83,10 @@ export function AddToCartButton({
       disabled={soldOut}
       className={
         soldOut
-          ? "w-full cursor-not-allowed rounded-lg border border-zinc-200 bg-zinc-50 px-5 py-3 text-sm font-semibold text-zinc-400 sm:w-auto"
+          ? "w-full cursor-not-allowed rounded-lg border border-line bg-raised px-5 py-3 text-sm font-semibold text-ink-faint sm:w-auto"
           : justAdded
-            ? "w-full rounded-lg bg-emerald-700 px-5 py-3 text-sm font-semibold text-white sm:w-auto"
-            : "w-full rounded-lg bg-emerald-600 px-5 py-3 text-sm font-semibold text-white hover:bg-emerald-700 sm:w-auto"
+            ? "w-full rounded-lg bg-status-success px-5 py-3 text-sm font-semibold text-page sm:w-auto"
+            : "w-full rounded-lg bg-accent-strong px-5 py-3 text-sm font-semibold text-white hover:bg-accent sm:w-auto"
       }
     >
       {soldOut ? STOCK_LABELS.out_of_stock : justAdded ? "Added to cart ✓" : "Add to cart"}

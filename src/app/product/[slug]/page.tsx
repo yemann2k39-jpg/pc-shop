@@ -34,26 +34,22 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8">
-      <nav aria-label="Breadcrumb" className="mb-6 text-sm text-zinc-500">
-        <Link href="/" className="hover:text-zinc-800">
+      <nav aria-label="Breadcrumb" className="mb-6 text-sm text-ink-faint">
+        <Link href="/" className="text-ink-dim hover:text-ink">
           Home
         </Link>
         <span className="mx-1.5">/</span>
-        {category.slug ? (
-          <>
-            <Link href={`/category/${category.slug}`} className="hover:text-zinc-800">
-              {category.name}
-            </Link>
-            <span className="mx-1.5">/</span>
-          </>
-        ) : null}
-        <span aria-current="page" className="font-medium text-zinc-800">
+        <Link href={`/category/${category.slug}`} className="text-ink-dim hover:text-ink">
+          {category.name}
+        </Link>
+        <span className="mx-1.5">/</span>
+        <span aria-current="page" className="font-medium text-ink">
           {product.model}
         </span>
       </nav>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
-        <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+        <div className="overflow-hidden rounded-xl border border-line bg-surface">
           <div className="relative aspect-[4/3]">
             <Image
               src={product.imageUrl}
@@ -69,16 +65,16 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
         <div className="flex flex-col gap-4">
           <div>
-            <p className="text-sm font-medium tracking-wide text-zinc-500 uppercase">
+            <p className="text-sm font-medium tracking-wide text-ink-faint uppercase">
               {product.brand}
             </p>
-            <h1 className="mt-1 text-3xl font-semibold tracking-tight">
+            <h1 className="mt-1 text-3xl font-semibold tracking-tight text-ink">
               {product.model}
             </h1>
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="text-3xl font-bold">
+            <span className="text-3xl font-bold text-ink">
               {formatPrice(product.priceCents)}
             </span>
             <span
@@ -99,23 +95,23 @@ export default async function ProductPage({ params }: ProductPageProps) {
             }}
           />
 
-          <div className="rounded-xl border border-zinc-200 bg-white">
-            <h2 className="border-b border-zinc-200 px-4 py-3 text-sm font-semibold">
+          <div className="rounded-xl border border-line bg-surface">
+            <h2 className="border-b border-line px-4 py-3 text-sm font-semibold text-ink">
               Specifications
             </h2>
             {specEntries.length === 0 ? (
-              <p className="px-4 py-3 text-sm text-zinc-500">
+              <p className="px-4 py-3 text-sm text-ink-dim">
                 No specifications listed.
               </p>
             ) : (
-              <dl className="divide-y divide-zinc-100">
+              <dl className="divide-y divide-line">
                 {specEntries.map(([key, value]) => (
                   <div
                     key={key}
                     className="grid grid-cols-[40%_60%] gap-2 px-4 py-2.5 text-sm"
                   >
-                    <dt className="text-zinc-500">{formatSpecKey(key)}</dt>
-                    <dd className="font-medium text-zinc-900">
+                    <dt className="text-ink-dim">{formatSpecKey(key)}</dt>
+                    <dd className="font-medium text-ink">
                       {formatSpec(value, key)}
                     </dd>
                   </div>
@@ -128,7 +124,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
       {similar.length > 0 ? (
         <section aria-labelledby="similar-heading" className="mt-12">
-          <h2 id="similar-heading" className="mb-4 text-xl font-semibold">
+          <h2 id="similar-heading" className="mb-4 text-xl font-semibold text-ink">
             Similar {category.name}
           </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

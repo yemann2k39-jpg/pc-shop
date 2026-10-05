@@ -119,19 +119,19 @@ export default async function CategoryPage({
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8">
-      <nav aria-label="Breadcrumb" className="mb-4 text-sm text-zinc-500">
-        <Link href="/" className="hover:text-zinc-800">
+      <nav aria-label="Breadcrumb" className="mb-4 text-sm text-ink-faint">
+        <Link href="/" className="text-ink-dim hover:text-ink">
           Home
         </Link>
         <span className="mx-1.5">/</span>
-        <span className="font-medium text-zinc-800">{category.name}</span>
+        <span className="font-medium text-ink">{category.name}</span>
       </nav>
 
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">
+        <h1 className="text-2xl font-semibold tracking-tight text-ink">
           {category.name}
         </h1>
-        <p className="mt-1 text-sm text-zinc-500">
+        <p className="mt-1 text-sm text-ink-dim">
           {result.total} {result.total === 1 ? "product" : "products"} ·{" "}
           {category.tagline}
         </p>
@@ -155,7 +155,7 @@ export default async function CategoryPage({
               aria-label="Sort products"
               className="flex items-center gap-1 text-sm"
             >
-              <span className="mr-1 text-zinc-400">Sort:</span>
+              <span className="mr-1 text-ink-faint">Sort:</span>
               {PRODUCT_SORTS.map((value) => (
                 <Link
                   key={value}
@@ -163,8 +163,8 @@ export default async function CategoryPage({
                   aria-current={sort === value ? "true" : undefined}
                   className={
                     sort === value
-                      ? "rounded-full bg-zinc-900 px-3 py-1.5 font-medium text-white"
-                      : "rounded-full px-3 py-1.5 text-zinc-600 hover:bg-zinc-100"
+                      ? "rounded-full bg-accent-strong px-3 py-1.5 font-medium text-white"
+                      : "rounded-full px-3 py-1.5 text-ink-dim hover:bg-raised hover:text-ink"
                   }
                 >
                   {SORT_LABELS[value]}
@@ -195,9 +195,9 @@ export default async function CategoryPage({
               </div>
             </>
           ) : (
-            <div className="rounded-xl border border-dashed border-zinc-300 bg-white p-12 text-center">
-              <p className="font-medium text-zinc-700">No products match</p>
-              <p className="mt-1 text-sm text-zinc-500">
+            <div className="rounded-xl border border-dashed border-line bg-surface p-12 text-center">
+              <p className="font-medium text-ink">No products match</p>
+              <p className="mt-1 text-sm text-ink-dim">
                 {filters.activeCount > 0
                   ? "Try removing some filters."
                   : "This category has no products yet."}

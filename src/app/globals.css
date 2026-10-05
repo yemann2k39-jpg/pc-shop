@@ -36,7 +36,6 @@
      (bg-accent + white is ~3.1:1); `accent` itself is for links, borders,
      icons, and large text. */
   --color-accent: #5b93e6;
-  --color-accent-hover: #77a7ee;
   --color-accent-strong: #2f6acb;
 
   /* Semantic status colors (stock, payment states). */
@@ -54,5 +53,14 @@
 
   ::selection {
     background: color-mix(in srgb, var(--color-accent) 35%, transparent);
+  }
+}
+
+/* Hide the horizontal scrollbar on the category nav (scrolling itself stays
+   available via touch/shift-wheel; scrollbars render dark via color-scheme). */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
   }
 }

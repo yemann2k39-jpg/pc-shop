@@ -7,9 +7,9 @@ import type { CategoryConfig } from "@/lib/catalog";
 import { formatPrice, formatSpec, formatSpecKey, STOCK_LABELS } from "@/lib/format";
 
 export const STOCK_STYLES: Record<Product["stockStatus"], string> = {
-  in_stock: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  low_stock: "bg-amber-50 text-amber-700 border-amber-200",
-  out_of_stock: "bg-zinc-100 text-zinc-500 border-zinc-200",
+  in_stock: "border-status-success/25 bg-status-success/10 text-status-success",
+  low_stock: "border-status-warning/25 bg-status-warning/10 text-status-warning",
+  out_of_stock: "border-line bg-raised text-ink-dim",
 };
 
 export function ProductCard({
@@ -20,13 +20,13 @@ export function ProductCard({
   category: CategoryConfig;
 }) {
   return (
-    <div className="group flex flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white transition-shadow hover:shadow-md">
+    <div className="group flex flex-col overflow-hidden rounded-xl border border-line bg-surface transition-colors hover:border-line-strong">
       <Link
         href={`/product/${product.slug}`}
         aria-label={`${product.brand} ${product.model} — ${formatPrice(product.priceCents)}`}
         className="block"
       >
-        <div className="relative aspect-[4/3] overflow-hidden bg-zinc-50">
+        <div className="relative aspect-[4/3] overflow-hidden bg-raised">
           <Image
             src={product.imageUrl}
             alt={`${product.brand} ${product.model}`}
@@ -38,20 +38,20 @@ export function ProductCard({
         </div>
         <div className="flex flex-col gap-2 p-4 pb-2">
           <div>
-            <p className="text-xs font-medium tracking-wide text-zinc-500 uppercase">
+            <p className="text-xs font-medium tracking-wide text-ink-faint uppercase">
               {product.brand}
             </p>
-            <h3 className="text-sm leading-snug font-semibold text-zinc-900">
+            <h3 className="text-sm leading-snug font-semibold text-ink">
               {product.model}
             </h3>
           </div>
-          <ul className="space-y-0.5 text-xs text-zinc-600">
+          <ul className="space-y-0.5 text-xs text-ink-dim">
             {category.cardSpecs.map((key) => {
               const value = product.specs[key];
               if (value === undefined) return null;
               return (
                 <li key={key}>
-                  <span className="text-zinc-400">{formatSpecKey(key)}</span>{" "}
+                  <span className="text-ink-faint">{formatSpecKey(key)}</span>{" "}
                   {formatSpec(value, key)}
                 </li>
               );
@@ -60,8 +60,8 @@ export function ProductCard({
         </div>
       </Link>
       <div className="mt-auto flex items-center justify-between gap-2 p-4 pt-2">
-        <div className="flex flex-col">
-          <span className="text-base font-bold text-zinc-900">
+        <div className="flex flex-col gap-1">
+          <span className="text-base font-bold text-ink">
             {formatPrice(product.priceCents)}
           </span>
           <span

@@ -3,8 +3,6 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 
-import { formatPrice } from "@/lib/format";
-
 function MockPaymentInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -38,25 +36,28 @@ function MockPaymentInner() {
 
   return (
     <div className="mx-auto w-full max-w-md px-4 py-16">
-      <div className="rounded-xl border border-zinc-200 bg-white p-6">
-        <p className="text-xs font-medium tracking-wide text-zinc-400 uppercase">
+      <div className="rounded-xl border border-line bg-surface p-6">
+        <p className="text-xs font-medium tracking-wide text-ink-faint uppercase">
           Mock payment gateway
         </p>
-        <h1 className="mt-1 text-xl font-semibold">Test checkout</h1>
-        <p className="mt-2 text-sm text-zinc-500">
+        <h1 className="mt-1 text-xl font-semibold text-ink">Test checkout</h1>
+        <p className="mt-2 text-sm text-ink-dim">
           No Stripe keys are configured, so this local stand-in simulates the
           hosted payment page.
         </p>
 
-        <div className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm">
-          <p className="text-zinc-500">Order</p>
-          <p className="font-mono font-semibold text-zinc-900">{orderNumber || "—"}</p>
-          <p className="mt-2 text-zinc-500">Card</p>
-          <p className="font-mono text-zinc-900">4242 4242 4242 4242</p>
+        <div className="mt-4 rounded-lg border border-line bg-raised p-3 text-sm">
+          <p className="text-ink-faint">Order</p>
+          <p className="font-mono font-semibold text-ink">{orderNumber || "—"}</p>
+          <p className="mt-2 text-ink-faint">Card</p>
+          <p className="font-mono text-ink">4242 4242 4242 4242</p>
         </div>
 
         {error ? (
-          <p role="alert" className="mt-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p
+            role="alert"
+            className="mt-3 rounded-md border border-status-danger/25 bg-status-danger/10 px-3 py-2 text-sm text-status-danger"
+          >
             {error}
           </p>
         ) : null}
@@ -66,7 +67,7 @@ function MockPaymentInner() {
             type="button"
             onClick={() => pay("approve")}
             disabled={processing || !orderNumber}
-            className="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+            className="rounded-lg bg-accent-strong px-4 py-2.5 text-sm font-semibold text-white hover:bg-accent disabled:opacity-50"
           >
             {processing ? "Processing…" : "Approve payment"}
           </button>
@@ -74,7 +75,7 @@ function MockPaymentInner() {
             type="button"
             onClick={() => pay("decline")}
             disabled={processing || !orderNumber}
-            className="rounded-lg border border-zinc-300 px-4 py-2.5 text-sm font-medium text-zinc-600 hover:bg-zinc-100 disabled:opacity-50"
+            className="rounded-lg border border-line px-4 py-2.5 text-sm font-medium text-ink-dim hover:bg-raised hover:text-ink disabled:opacity-50"
           >
             Simulate declined card
           </button>
@@ -86,7 +87,7 @@ function MockPaymentInner() {
 
 export default function MockPaymentPage() {
   return (
-    <Suspense fallback={<div className="mx-auto max-w-md px-4 py-16 text-sm text-zinc-500">Loading…</div>}>
+    <Suspense fallback={<div className="mx-auto max-w-md px-4 py-16 text-sm text-ink-dim">Loading…</div>}>
       <MockPaymentInner />
     </Suspense>
   );

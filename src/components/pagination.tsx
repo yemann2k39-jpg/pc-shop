@@ -42,7 +42,7 @@ export function Pagination({
       {page > 1 ? (
         <Link
           href={hrefFor(page - 1)}
-          className="rounded-md px-3 py-1.5 text-sm text-zinc-600 hover:bg-zinc-100"
+          className="rounded-md px-3 py-1.5 text-sm text-ink-dim hover:bg-raised hover:text-ink"
         >
           Previous
         </Link>
@@ -54,8 +54,8 @@ export function Pagination({
           aria-current={target === page ? "page" : undefined}
           className={
             target === page
-              ? "rounded-md bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white"
-              : "rounded-md px-3 py-1.5 text-sm text-zinc-600 hover:bg-zinc-100"
+              ? "rounded-md bg-accent-strong px-3 py-1.5 text-sm font-medium text-white"
+              : "rounded-md px-3 py-1.5 text-sm text-ink-dim hover:bg-raised hover:text-ink"
           }
         >
           {target}
@@ -64,7 +64,7 @@ export function Pagination({
       {page < pageCount ? (
         <Link
           href={hrefFor(page + 1)}
-          className="rounded-md px-3 py-1.5 text-sm text-zinc-600 hover:bg-zinc-100"
+          className="rounded-md px-3 py-1.5 text-sm text-ink-dim hover:bg-raised hover:text-ink"
         >
           Next
         </Link>
