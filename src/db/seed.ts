@@ -11,7 +11,7 @@ import { count } from "drizzle-orm";
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 
-import { CATEGORIES, getCategory } from "../lib/catalog";
+import { CATEGORIES, FALLBACK_CATEGORY, getCategory } from "../lib/catalog";
 import { DEFAULT_DB_PATH } from "./paths";
 import { products, type StockStatus } from "./schema";
 
@@ -323,7 +323,7 @@ function escapeXml(value: string): string {
 }
 
 function productSvg(categorySlug: string, brand: string, model: string): string {
-  const category = getCategory(categorySlug)!;
+  const category = getCategory(categorySlug) ?? FALLBACK_CATEGORY;
   const categoryInitials = category.name
     .split(" ")
     .map((word) => word[0])
@@ -331,20 +331,16 @@ function productSvg(categorySlug: string, brand: string, model: string): string 
   // Truncate long model names so they fit the fixed 640x480 canvas.
   const modelLine = model.length > 28 ? `${model.slice(0, 27)}…` : model;
 
+  // Flat, dark placeholder that matches the site theme (see globals.css):
+  // surface background, hairline frame, accent category label, two text tiers.
   return `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480" role="img" aria-label="${escapeXml(`${category.name}: ${brand} ${model}`)}">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="${category.accentFrom}"/>
-      <stop offset="100%" stop-color="${category.accentTo}"/>
-    </linearGradient>
-  </defs>
-  <rect width="640" height="480" fill="url(#bg)"/>
-  <circle cx="540" cy="90" r="160" fill="#ffffff" opacity="0.08"/>
-  <circle cx="80" cy="420" r="200" fill="#000000" opacity="0.12"/>
-  <text x="48" y="112" font-family="system-ui, sans-serif" font-size="64" font-weight="700" fill="#ffffff" opacity="0.35">${escapeXml(categoryInitials)}</text>
-  <text x="48" y="330" font-family="system-ui, sans-serif" font-size="34" font-weight="600" fill="#ffffff">${escapeXml(brand)}</text>
-  <text x="48" y="376" font-family="system-ui, sans-serif" font-size="26" fill="#ffffff" opacity="0.85">${escapeXml(modelLine)}</text>
-  <text x="48" y="430" font-family="system-ui, sans-serif" font-size="16" fill="#ffffff" opacity="0.6">Placeholder image</text>
+  <rect width="640" height="480" fill="#14171c"/>
+  <rect x="0.5" y="0.5" width="639" height="479" fill="none" stroke="#262c34"/>
+  <text x="48" y="106" font-family="system-ui, sans-serif" font-size="20" font-weight="600" letter-spacing="4" fill="#5b93e6">${escapeXml(categoryInitials)}</text>
+  <line x1="48" y1="126" x2="240" y2="126" stroke="#262c34"/>
+  <text x="48" y="330" font-family="system-ui, sans-serif" font-size="34" font-weight="600" fill="#f3f5f7">${escapeXml(brand)}</text>
+  <text x="48" y="376" font-family="system-ui, sans-serif" font-size="26" fill="#9aa4af">${escapeXml(modelLine)}</text>
+  <text x="48" y="430" font-family="system-ui, sans-serif" font-size="16" fill="#68717d">Placeholder image</text>
 </svg>
 `;
 }
