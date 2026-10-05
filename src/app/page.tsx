@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import { ProductCard } from "@/components/product-card";
@@ -38,16 +39,15 @@ export default async function Home() {
               href={`/category/${category.slug}`}
               className="group overflow-hidden rounded-xl border border-zinc-200 bg-white transition-shadow hover:shadow-md"
             >
-              <div
-                className="flex h-20 items-center justify-center text-2xl font-bold text-white/70"
-                style={{
-                  background: `linear-gradient(135deg, ${category.accentFrom}, ${category.accentTo})`,
-                }}
-              >
-                {category.name
-                  .split(" ")
-                  .map((word) => word[0])
-                  .join("")}
+              <div className="flex h-20 items-center justify-center border-b border-zinc-200 bg-zinc-50">
+                <Image
+                  src={`/images/categories/${category.slug}.svg`}
+                  alt=""
+                  width={120}
+                  height={90}
+                  className="h-16 w-auto"
+                  unoptimized
+                />
               </div>
               <div className="p-4">
                 <h3 className="font-semibold text-zinc-900 group-hover:text-emerald-700">
