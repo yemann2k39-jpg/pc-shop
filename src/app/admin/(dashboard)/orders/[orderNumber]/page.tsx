@@ -88,8 +88,12 @@ export default async function AdminOrderDetailPage({
             ))}
           </ul>
           <div className="flex items-center justify-between border-t border-zinc-100 bg-zinc-50/60 px-5 py-4">
-            <span className="text-sm font-semibold text-zinc-900">Total</span>
-            <span className="text-lg font-bold text-zinc-900">{formatPrice(order.subtotalCents)}</span>
+            <span className="text-sm font-semibold text-zinc-900">
+              Total{order.discountCents > 0 ? ` (${order.discountCode} −${formatPrice(order.discountCents)})` : ""}
+            </span>
+            <span className="text-lg font-bold text-zinc-900">
+              {formatPrice(order.subtotalCents - order.discountCents)}
+            </span>
           </div>
         </section>
 

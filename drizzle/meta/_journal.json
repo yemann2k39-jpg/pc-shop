@@ -15,6 +15,13 @@
       "when": 1791554361833,
       "tag": "0001_lean_the_anarchist",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1791572705529,
+      "tag": "0002_concerned_tarantula",
+      "breakpoints": true
     }
   ]
 }

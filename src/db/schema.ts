@@ -68,6 +68,14 @@ export const orders = sqliteTable(
     shippingCountry: text("shipping_country").notNull(),
     items: text("items", { mode: "json" }).$type<OrderItem[]>().notNull(),
     subtotalCents: integer("subtotal_cents").notNull(),
+    /** Discount code applied at checkout, if any (uppercase). */
+    discountCode: text("discount_code"),
+    /** Amount subtracted from subtotalCents, in cents. */
+    discountCents: integer("discount_cents").notNull().default(0),
+    /** Guards the one-time redemption counter on the discount row. */
+    discountRedeemed: integer("discount_redeemed", { mode: "boolean" })
+      .notNull()
+      .default(false),
     /** Set by the payment provider when a checkout session is created. */
     paymentSessionId: text("payment_session_id"),
     createdAt: integer("created_at", { mode: "timestamp" })
@@ -79,6 +87,33 @@ export const orders = sqliteTable(
 
 export type Order = typeof orders.$inferSelect;
 export type NewOrder = typeof orders.$inferInsert;
+
+/* ------------------------------ Discounts ------------------------------ */
+
+export const DISCOUNT_TYPES = ["percent", "fixed"] as const;
+export type DiscountType = (typeof DISCOUNT_TYPES)[number];
+
+export const discounts = sqliteTable("discounts", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  /** Uppercase code the customer types at checkout, e.g. "SPRING10". */
+  code: text("code").notNull().unique(),
+  /** "percent" (value = 1-100) or "fixed" (value = cents off). */
+  type: text("type").$type<DiscountType>().notNull(),
+  value: integer("value").notNull(),
+  /** Minimum order subtotal in cents for the code to apply (0 = none). */
+  minSubtotalCents: integer("min_subtotal_cents").notNull().default(0),
+  /** Hard cap on redemptions across all orders (null = unlimited). */
+  maxRedemptions: integer("max_redemptions"),
+  timesUsed: integer("times_used").notNull().default(0),
+  expiresAt: integer("expires_at", { mode: "timestamp" }),
+  active: integer("active", { mode: "boolean" }).notNull().default(true),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+export type Discount = typeof discounts.$inferSelect;
+export type NewDiscount = typeof discounts.$inferInsert;
 
 /* ------------------------------- Builds -------------------------------- */
 

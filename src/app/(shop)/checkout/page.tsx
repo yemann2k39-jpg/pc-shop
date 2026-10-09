@@ -39,6 +39,57 @@ export default function CheckoutPage() {
   const [form, setForm] = useState<CustomerForm>(EMPTY_FORM);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [codeInput, setCodeInput] = useState("");
+  const [appliedCode, setAppliedCode] = useState<string | null>(null);
+  const [discountCents, setDiscountCents] = useState(0);
+  const [discountLabel, setDiscountLabel] = useState<string | null>(null);
+  const [codeMessage, setCodeMessage] = useState<string | null>(null);
+  const [checkingCode, setCheckingCode] = useState(false);
+
+  const totalCents = Math.max(0, subtotalCents - discountCents);
+
+  const applyCode = async () => {
+    setCodeMessage(null);
+    if (!codeInput.trim()) return;
+    setCheckingCode(true);
+    try {
+      const response = await fetch("/api/discounts/validate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: codeInput, subtotalCents }),
+      });
+      const data = (await response.json()) as {
+        ok?: boolean;
+        code?: string;
+        label?: string;
+        discountCents?: number;
+        reason?: string;
+      };
+      if (data.ok && typeof data.discountCents === "number") {
+        setAppliedCode(data.code ?? codeInput.trim().toUpperCase());
+        setDiscountCents(data.discountCents);
+        setDiscountLabel(data.label ?? "Discount applied");
+        setCodeMessage(null);
+      } else {
+        setAppliedCode(null);
+        setDiscountCents(0);
+        setDiscountLabel(null);
+        setCodeMessage(data.reason ?? "This code is not valid.");
+      }
+    } catch {
+      setCodeMessage("Network error. Please try again.");
+    } finally {
+      setCheckingCode(false);
+    }
+  };
+
+  const removeCode = () => {
+    setAppliedCode(null);
+    setDiscountCents(0);
+    setDiscountLabel(null);
+    setCodeInput("");
+    setCodeMessage(null);
+  };
 
   const update = (field: keyof CustomerForm) => (value: string) =>
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -54,6 +105,7 @@ export default function CheckoutPage() {
         body: JSON.stringify({
           customer: form,
           items: items.map((item) => ({ slug: item.slug, qty: item.qty })),
+          discountCode: appliedCode,
         }),
       });
       const data = (await response.json()) as { url?: string; error?: string };
@@ -174,9 +226,60 @@ export default function CheckoutPage() {
                 </li>
               ))}
             </ul>
-            <div className="mt-4 flex justify-between border-t border-zinc-200 pt-3 text-base font-bold">
-              <span>Total</span>
-              <span>{formatPrice(subtotalCents)}</span>
+            <div className="mt-4 border-t border-zinc-200 pt-3">
+              {appliedCode ? (
+                <div className="flex items-center justify-between rounded-lg bg-emerald-50 px-3 py-2 text-sm">
+                  <span className="font-medium text-emerald-700">
+                    {appliedCode} · {discountLabel}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={removeCode}
+                    className="text-xs font-semibold text-emerald-700 hover:text-emerald-900"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={codeInput}
+                      onChange={(event) => setCodeInput(event.target.value)}
+                      placeholder="Discount code"
+                      className="min-w-0 flex-1 rounded-md border border-zinc-300 px-3 py-2 text-sm uppercase focus:border-blue-600 focus:outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={applyCode}
+                      disabled={checkingCode || !codeInput.trim()}
+                      className="rounded-md border border-zinc-300 px-3 py-2 text-sm font-semibold text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+                    >
+                      {checkingCode ? "…" : "Apply"}
+                    </button>
+                  </div>
+                  {codeMessage ? (
+                    <p className="mt-1.5 text-xs text-red-600">{codeMessage}</p>
+                  ) : null}
+                </div>
+              )}
+            </div>
+            <div className="mt-3 space-y-1.5 text-sm">
+              <div className="flex justify-between text-zinc-500">
+                <span>Subtotal</span>
+                <span>{formatPrice(subtotalCents)}</span>
+              </div>
+              {discountCents > 0 ? (
+                <div className="flex justify-between text-emerald-700">
+                  <span>Discount</span>
+                  <span>−{formatPrice(discountCents)}</span>
+                </div>
+              ) : null}
+              <div className="flex justify-between border-t border-zinc-200 pt-2 text-base font-bold">
+                <span>Total</span>
+                <span>{formatPrice(totalCents)}</span>
+              </div>
             </div>
           </div>
         </aside>

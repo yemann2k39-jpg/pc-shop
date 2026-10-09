@@ -58,7 +58,7 @@ export default async function AdminOrdersPage({
                 <td className="px-3 py-3 text-zinc-600">
                   {order.createdAt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                 </td>
-                <td className="px-3 py-3 font-medium text-zinc-900">{formatPrice(order.subtotalCents)}</td>
+                <td className="px-3 py-3 font-medium text-zinc-900">{formatPrice(order.subtotalCents - order.discountCents)}</td>
                 <td className="px-3 py-3">
                   <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${STATUS_BADGES[order.status]}`}>
                     {order.status}

@@ -124,9 +124,21 @@ export default async function OrderPage({ params, searchParams }: OrderPageProps
           ))}
         </ul>
 
-        <div className="mt-4 flex justify-between text-base font-bold">
-          <span>Total</span>
-          <span>{formatPrice(order.subtotalCents)}</span>
+        <div className="mt-4 space-y-1.5 text-sm">
+          <div className="flex justify-between text-zinc-500">
+            <span>Subtotal</span>
+            <span>{formatPrice(order.subtotalCents)}</span>
+          </div>
+          {order.discountCents > 0 ? (
+            <div className="flex justify-between text-emerald-700">
+              <span>Discount {order.discountCode ? `(${order.discountCode})` : ""}</span>
+              <span>−{formatPrice(order.discountCents)}</span>
+            </div>
+          ) : null}
+          <div className="flex justify-between border-t border-zinc-200 pt-2 text-base font-bold">
+            <span>Total</span>
+            <span>{formatPrice(order.subtotalCents - order.discountCents)}</span>
+          </div>
         </div>
 
         <div className="mt-6 rounded-lg bg-zinc-50 p-3 text-sm">

@@ -1,4 +1,4 @@
-import { count, desc, eq, inArray, sql, sum } from "drizzle-orm";
+import { count, desc, eq, inArray, sql } from "drizzle-orm";
 import Link from "next/link";
 
 import { db } from "@/db";
@@ -34,7 +34,10 @@ function StatCard({
 
 export default async function AdminDashboardPage() {
   const [revenueRow] = await db
-    .select({ total: sum(orders.subtotalCents), count: count() })
+    .select({
+      total: sql<string>`COALESCE(SUM(${orders.subtotalCents} - ${orders.discountCents}), 0)`,
+      count: count(),
+    })
     .from(orders)
     .where(eq(orders.status, "paid"));
 

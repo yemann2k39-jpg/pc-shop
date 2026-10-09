@@ -6,6 +6,7 @@ import { orders, products, type OrderItem } from "@/db/schema";
 import { MAX_QTY_PER_ITEM } from "@/lib/cart-context";
 import { generateOrderNumber, setOrderSession } from "@/lib/orders";
 import { getPaymentProvider } from "@/lib/payments";
+import { validateDiscountCode } from "@/lib/discounts";
 
 const MAX_FIELD_LENGTH = 200;
 const MAX_CART_ITEMS = 50;
@@ -20,6 +21,8 @@ type CheckoutBody = {
     country?: unknown;
   };
   items?: unknown;
+  /** Optional discount code; re-validated server-side against the DB. */
+  discountCode?: unknown;
 };
 
 function nonEmptyString(value: unknown): value is string {
@@ -97,6 +100,18 @@ export async function POST(request: Request) {
     subtotalCents += product.priceCents * qty;
   }
 
+  // Optional discount: always re-validated server-side, never trusted.
+  let discountCode: string | null = null;
+  let discountCents = 0;
+  if (typeof body.discountCode === "string" && body.discountCode.trim()) {
+    const validation = await validateDiscountCode(body.discountCode, subtotalCents);
+    if (!validation.ok) {
+      return NextResponse.json({ error: validation.reason }, { status: 409 });
+    }
+    discountCode = validation.code;
+    discountCents = validation.discountCents;
+  }
+
   const orderNumber = generateOrderNumber();
   // `.returning()` gives us the inserted row directly (better-sqlite3 driver).
   const [order] = await db
@@ -112,6 +127,8 @@ export async function POST(request: Request) {
       shippingCountry: String(customer.country).trim(),
       items,
       subtotalCents,
+      discountCode,
+      discountCents,
     })
     .returning();
 
