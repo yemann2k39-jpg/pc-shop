@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { AddToCartButton } from "@/components/add-to-cart-button";
+import { PerformancePanel } from "@/components/performance-panel";
 import { ProductCard, STOCK_STYLES } from "@/components/product-card";
 import { FALLBACK_CATEGORY, getCategory } from "@/lib/catalog";
 import { formatPrice, formatSpec, formatSpecKey, STOCK_LABELS } from "@/lib/format";
@@ -123,6 +124,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
               </dl>
             )}
           </div>
+
+          <PerformancePanel product={product} />
         </div>
       </div>
 
