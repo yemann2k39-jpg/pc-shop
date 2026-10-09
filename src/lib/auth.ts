@@ -20,8 +20,10 @@ function adminPassword(): string {
   return process.env.ADMIN_PASSWORD ?? "";
 }
 
-function sessionSecret(): string {
-  return process.env.ADMIN_SESSION_SECRET || adminPassword() || "pc-shop-dev-secret";
+function sessionSecret(): string | null {
+  const password = adminPassword();
+  if (!password) return null;
+  return process.env.ADMIN_SESSION_SECRET || password;
 }
 
 function toHex(buffer: ArrayBuffer): string {
@@ -29,9 +31,11 @@ function toHex(buffer: ArrayBuffer): string {
 }
 
 async function sign(message: string): Promise<string> {
+  const secret = sessionSecret();
+  if (!secret) throw new Error("Admin auth is not configured");
   const key = await crypto.subtle.importKey(
     "raw",
-    new TextEncoder().encode(sessionSecret()),
+    new TextEncoder().encode(secret),
     { name: "HMAC", hash: "SHA-256" },
     false,
     ["sign"],
@@ -48,7 +52,9 @@ export async function createSessionToken(): Promise<string | null> {
 
 /** Validates a token's signature and expiry. Safe to call from proxy or server code. */
 export async function verifySessionToken(token: string | undefined | null): Promise<boolean> {
-  if (!token) return false;
+  // Unconfigured auth never verifies: without a real secret no token can be
+  // trusted (this also removes the hardcoded dev-secret forgery vector).
+  if (!adminPassword() || !token) return false;
   const dot = token.indexOf(".");
   if (dot <= 0) return false;
   const expiresAt = token.slice(0, dot);

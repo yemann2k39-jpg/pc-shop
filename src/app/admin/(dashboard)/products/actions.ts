@@ -126,6 +126,8 @@ export async function updateProduct(
   await requireAdmin();
 
   const originalSlug = String(formData.get("originalSlug") ?? "");
+  // Defense-in-depth: the slug feeds a filesystem path for the image write.
+  if (!/^[a-z0-9-]+$/.test(originalSlug)) return fail("Invalid product reference.");
   const parsed = parseProductForm(formData, originalSlug);
   if ("error" in parsed) return fail(parsed.error);
 
@@ -167,9 +169,11 @@ export async function updateProduct(
 export async function setRetired(slug: string, retired: boolean): Promise<void> {
   await requireAdmin();
 
+  if (!/^[a-z0-9-]+$/.test(slug)) return;
+
   await db
     .update(products)
-    .set({ stockStatus: retired ? "out_of_stock" : "low_stock" })
+    .set({ stockStatus: retired ? "out_of_stock" : "in_stock" })
     .where(eq(products.slug, slug));
 
   revalidatePath("/admin/products");

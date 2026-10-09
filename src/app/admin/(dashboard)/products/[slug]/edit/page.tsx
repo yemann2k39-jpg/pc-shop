@@ -44,7 +44,7 @@ export default async function EditProductPage({
                 : "border-red-200 bg-red-50 text-red-700 hover:bg-red-100"
             }`}
           >
-            {retired ? "Restore to shop (low stock)" : "Retire from shop"}
+            {retired ? "Restore to shop (in stock)" : "Retire from shop"}
           </button>
         </form>
       </header>

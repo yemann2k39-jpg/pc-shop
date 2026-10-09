@@ -21,6 +21,11 @@ export function escapeXml(value: string): string {
     .replaceAll("'", "&#39;");
 }
 
+/** Accent colors are interpolated into SVG attributes — only real hex colors. */
+function safeAccent(accent: string | undefined, fallback: string): string {
+  return accent && /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(accent) ? accent : fallback;
+}
+
 export function productSvg(
   categorySlug: string,
   brand: string,
@@ -28,7 +33,7 @@ export function productSvg(
   accentOverride?: string,
 ): string {
   const category = getCategory(categorySlug) ?? FALLBACK_CATEGORY;
-  const accent = accentOverride || category.accent;
+  const accent = safeAccent(accentOverride, category.accent);
   const illustration = categoryIllustration(categorySlug, accent) ?? "";
   // Truncate long model names so they fit the fixed 640x480 canvas
   // (strip dangling separators left by the slice).
