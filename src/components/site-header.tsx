@@ -10,6 +10,12 @@ export function SiteHeader() {
         <Link href="/" className="shrink-0 text-lg font-bold tracking-tight">
           PC<span className="text-blue-700">Shop</span>
         </Link>
+        <Link
+          href="/build"
+          className="shrink-0 rounded-full bg-zinc-900 px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-zinc-700"
+        >
+          Builder
+        </Link>
         <nav
           aria-label="Product categories"
           className="scrollbar-none flex flex-1 items-center gap-1 overflow-x-auto text-sm font-medium text-zinc-600"
