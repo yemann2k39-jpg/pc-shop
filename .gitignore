@@ -34,6 +34,9 @@
 *.db-wal
 *.db-shm
 
+# 3D model curation workspace (downloaded reference models, analysis scripts)
+/.model-src/
+
 # debug
 npm-debug.log*
 yarn-debug.log*
