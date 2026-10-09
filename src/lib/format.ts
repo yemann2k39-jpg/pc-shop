@@ -1,4 +1,4 @@
-import type { StockStatus } from "@/db/schema";
+import type { Product, StockStatus } from "@/db/schema";
 import type { SpecValue } from "@/db/schema";
 
 /** Human-readable labels for the spec keys used across the catalog. */
@@ -76,3 +76,17 @@ export const STOCK_LABELS: Record<StockStatus, string> = {
   low_stock: "Low stock",
   out_of_stock: "Out of stock",
 };
+
+/** True when the product has a valid compare-at price above the sale price. */
+export function isOnSale(
+  product: Pick<Product, "priceCents" | "compareAtCents">,
+): product is Pick<Product, "priceCents" | "compareAtCents"> & { compareAtCents: number } {
+  return product.compareAtCents !== null && product.compareAtCents > product.priceCents;
+}
+
+/** Whole percent off (e.g. 10 for 10% off), or null when not on sale. */
+export function percentOff(product: Pick<Product, "priceCents" | "compareAtCents">): number | null {
+  const { compareAtCents, priceCents } = product;
+  if (compareAtCents === null || compareAtCents <= priceCents) return null;
+  return Math.round((1 - priceCents / compareAtCents) * 100);
+}

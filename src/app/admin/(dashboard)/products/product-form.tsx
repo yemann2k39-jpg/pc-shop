@@ -29,6 +29,8 @@ export function ProductForm({ product }: { product?: Product }) {
   const [brand, setBrand] = useState(product?.brand ?? "");
   const [model, setModel] = useState(product?.model ?? "");
   const [accent, setAccent] = useState(ACCENTS[0]);
+  const [price, setPrice] = useState(product ? (product.priceCents / 100).toFixed(2) : "");
+  const [compareAt, setCompareAt] = useState(product?.compareAtCents ? (product.compareAtCents / 100).toFixed(2) : "");
   const [state, formAction, pending] = useActionState(
     product ? updateProduct : createProduct,
     initialState,
@@ -36,6 +38,11 @@ export function ProductForm({ product }: { product?: Product }) {
 
   const fields = specFieldsForCategory(category);
   const previewSrc = `/api/admin/product-preview?category=${encodeURIComponent(category)}&brand=${encodeURIComponent(brand || "Brand")}&model=${encodeURIComponent(model || "Model")}&accent=${encodeURIComponent(accent)}`;
+
+  const salePercent =
+    Number(price) > 0 && Number(compareAt) > Number(price)
+      ? Math.round((1 - Number(price) / Number(compareAt)) * 100)
+      : null;
 
   const inputClass =
     "mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10";
@@ -82,7 +89,9 @@ export function ProductForm({ product }: { product?: Product }) {
               <input id="model" name="model" required maxLength={120} value={model} onChange={(e) => setModel(e.target.value)} placeholder="Ryzen 7 9800X3D" className={inputClass} />
             </div>
             <div>
-              <label htmlFor="price" className="block text-sm font-medium text-zinc-700">Price (USD)</label>
+              <label htmlFor="price" className="block text-sm font-medium text-zinc-700">
+                Price (USD) <span className="font-normal text-zinc-400">— what customers pay</span>
+              </label>
               <input
                 id="price"
                 name="price"
@@ -90,10 +99,36 @@ export function ProductForm({ product }: { product?: Product }) {
                 step="0.01"
                 min="0"
                 required
-                defaultValue={product ? (product.priceCents / 100).toFixed(2) : undefined}
-                placeholder="399.00"
+                value={price}
+                onChange={(event) => setPrice(event.target.value)}
+                placeholder="206.10"
                 className={inputClass}
               />
+            </div>
+            <div>
+              <label htmlFor="compareAt" className="block text-sm font-medium text-zinc-700">
+                Original price (USD, optional)
+              </label>
+              <input
+                id="compareAt"
+                name="compareAt"
+                type="number"
+                step="0.01"
+                min="0"
+                value={compareAt}
+                onChange={(event) => setCompareAt(event.target.value)}
+                placeholder="229.00"
+                className={inputClass}
+              />
+              {salePercent !== null ? (
+                <p className="mt-1 text-xs font-medium text-emerald-600">
+                  On sale: {salePercent}% off — the original price will be shown crossed out.
+                </p>
+              ) : (
+                <p className="mt-1 text-xs text-zinc-400">
+                  Set higher than the price to show a crossed-out original (e.g. 229 original, 206.10 price = 10% off).
+                </p>
+              )}
             </div>
           </div>
         </section>

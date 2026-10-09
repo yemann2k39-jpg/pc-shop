@@ -29,6 +29,13 @@
       "when": 1791574414300,
       "tag": "0003_illegal_warhawk",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1791575065316,
+      "tag": "0004_next_lorna_dane",
+      "breakpoints": true
     }
   ]
 }

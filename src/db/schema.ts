@@ -17,6 +17,11 @@ export const products = sqliteTable(
     model: text("model").notNull(),
     /** Price in minor units (US cents) to avoid float math. */
     priceCents: integer("price_cents").notNull(),
+    /**
+     * Optional original price (cents) shown crossed out when the product is
+     * on sale (priceCents is the discounted, charged price).
+     */
+    compareAtCents: integer("compare_at_cents"),
     stockStatus: text("stock_status")
       .$type<StockStatus>()
       .notNull()

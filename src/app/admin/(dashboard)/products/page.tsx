@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { CATEGORIES, getCategory } from "@/lib/catalog";
-import { formatPrice, STOCK_LABELS } from "@/lib/format";
+import { formatPrice, isOnSale, STOCK_LABELS } from "@/lib/format";
 import { listProducts } from "@/lib/products";
 import { STOCK_STATUSES, type StockStatus } from "@/db/schema";
 
@@ -140,7 +140,16 @@ export default async function AdminProductsPage({
                   </div>
                 </td>
                 <td className="px-3 py-3 text-zinc-600">{getCategory(product.category)?.name ?? product.category}</td>
-                <td className="px-3 py-3 font-medium text-zinc-900">{formatPrice(product.priceCents)}</td>
+                <td className="px-3 py-3">
+                  {isOnSale(product) ? (
+                    <span className="inline-flex items-baseline gap-1.5">
+                      <span className="font-semibold text-red-600">{formatPrice(product.priceCents)}</span>
+                      <span className="text-xs text-zinc-400 line-through">{formatPrice(product.compareAtCents)}</span>
+                    </span>
+                  ) : (
+                    <span className="font-medium text-zinc-900">{formatPrice(product.priceCents)}</span>
+                  )}
+                </td>
                 <td className="px-3 py-3">
                   <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${STOCK_BADGES[product.stockStatus]}`}>
                     {STOCK_LABELS[product.stockStatus]}

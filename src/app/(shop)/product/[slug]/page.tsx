@@ -7,7 +7,7 @@ import { AddToCartButton } from "@/components/add-to-cart-button";
 import { PerformancePanel } from "@/components/performance-panel";
 import { ProductCard, STOCK_STYLES } from "@/components/product-card";
 import { FALLBACK_CATEGORY, getCategory } from "@/lib/catalog";
-import { formatPrice, formatSpec, formatSpecKey, STOCK_LABELS } from "@/lib/format";
+import { formatPrice, formatSpec, formatSpecKey, isOnSale, percentOff, STOCK_LABELS } from "@/lib/format";
 import { getProductBySlug, getSimilarProducts } from "@/lib/products";
 
 export const dynamic = "force-dynamic";
@@ -78,10 +78,20 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </h1>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className="text-3xl font-bold">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className={`text-3xl font-bold ${isOnSale(product) ? "text-red-600" : ""}`}>
               {formatPrice(product.priceCents)}
             </span>
+            {isOnSale(product) ? (
+              <>
+                <span className="text-lg text-zinc-400 line-through">
+                  {formatPrice(product.compareAtCents)}
+                </span>
+                <span className="rounded-full border border-red-200 bg-red-50 px-2.5 py-1 text-xs font-semibold text-red-600">
+                  Save {percentOff(product)}%
+                </span>
+              </>
+            ) : null}
             <span
               className={`rounded-full border px-2.5 py-1 text-xs font-medium ${STOCK_STYLES[product.stockStatus]}`}
             >

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { AddToCartButton } from "@/components/add-to-cart-button";
 import type { Product } from "@/db/schema";
 import type { CategoryConfig } from "@/lib/catalog";
-import { formatPrice, formatSpec, formatSpecKey, STOCK_LABELS } from "@/lib/format";
+import { formatPrice, formatSpec, formatSpecKey, isOnSale, percentOff, STOCK_LABELS } from "@/lib/format";
 
 export const STOCK_STYLES: Record<Product["stockStatus"], string> = {
   in_stock: "bg-emerald-50 text-emerald-700 border-emerald-200",
@@ -61,14 +61,28 @@ export function ProductCard({
       </Link>
       <div className="mt-auto flex items-center justify-between gap-2 p-4 pt-2">
         <div className="flex flex-col">
-          <span className="text-base font-bold text-zinc-900">
-            {formatPrice(product.priceCents)}
-          </span>
-          <span
-            className={`w-fit rounded-full border px-2 py-0.5 text-[11px] font-medium ${STOCK_STYLES[product.stockStatus]}`}
-          >
-            {STOCK_LABELS[product.stockStatus]}
-          </span>
+          <div className="flex items-baseline gap-2">
+            <span className={`text-base font-bold ${isOnSale(product) ? "text-red-600" : "text-zinc-900"}`}>
+              {formatPrice(product.priceCents)}
+            </span>
+            {product.compareAtCents !== null && isOnSale(product) ? (
+              <span className="text-xs text-zinc-400 line-through">
+                {formatPrice(product.compareAtCents)}
+              </span>
+            ) : null}
+          </div>
+          <div className="flex items-center gap-1.5">
+            {percentOff(product) !== null ? (
+              <span className="w-fit rounded-full border border-red-200 bg-red-50 px-2 py-0.5 text-[11px] font-semibold text-red-600">
+                −{percentOff(product)}%
+              </span>
+            ) : null}
+            <span
+              className={`w-fit rounded-full border px-2 py-0.5 text-[11px] font-medium ${STOCK_STYLES[product.stockStatus]}`}
+            >
+              {STOCK_LABELS[product.stockStatus]}
+            </span>
+          </div>
         </div>
         <AddToCartButton
           compact

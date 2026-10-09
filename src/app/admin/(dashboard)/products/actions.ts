@@ -23,7 +23,7 @@ function fail(error: string): ProductFormState {
 function parseProductForm(
   formData: FormData,
   knownSlug: string | undefined,
-): { slug: string; category: string; brand: string; model: string; priceCents: number; stockStatus: StockStatus; accent: string; specs: Record<string, SpecValue> } | { error: string } {
+): { slug: string; category: string; brand: string; model: string; priceCents: number; compareAtCents: number | null; stockStatus: StockStatus; accent: string; specs: Record<string, SpecValue> } | { error: string } {
   const category = String(formData.get("category") ?? "");
   const brand = String(formData.get("brand") ?? "").trim();
   const model = String(formData.get("model") ?? "").trim();
@@ -42,6 +42,20 @@ function parseProductForm(
   const priceCents = Math.round(price * 100);
   if (!STOCK_STATUSES.includes(stockStatus as StockStatus)) {
     return { error: "Choose a valid stock status." };
+  }
+
+  // Optional compare-at (original) price for sale display.
+  const compareAtRaw = String(formData.get("compareAt") ?? "").trim();
+  let compareAtCents: number | null = null;
+  if (compareAtRaw) {
+    const compareAt = Number(compareAtRaw);
+    if (!Number.isFinite(compareAt) || compareAt < 0 || compareAt > 100000) {
+      return { error: "Compare-at price must be a number between 0 and 100000." };
+    }
+    compareAtCents = Math.round(compareAt * 100);
+    if (compareAtCents <= priceCents) {
+      return { error: "Compare-at price must be higher than the sale price." };
+    }
   }
 
   // Structured specs: only known fields for the category, correctly typed.
@@ -71,7 +85,7 @@ function parseProductForm(
   if (!baseSlug) return { error: "Brand and model must contain letters or numbers." };
   const slug = knownSlug ?? baseSlug;
 
-  return { slug, category, brand, model, priceCents, stockStatus: stockStatus as StockStatus, accent, specs };
+  return { slug, category, brand, model, priceCents, compareAtCents, stockStatus: stockStatus as StockStatus, accent, specs };
 }
 
 export async function createProduct(
@@ -109,6 +123,7 @@ export async function createProduct(
     brand: parsed.brand,
     model: parsed.model,
     priceCents: parsed.priceCents,
+    compareAtCents: parsed.compareAtCents,
     stockStatus: parsed.stockStatus,
     imageUrl,
     specs: parsed.specs,
@@ -153,6 +168,7 @@ export async function updateProduct(
       brand: parsed.brand,
       model: parsed.model,
       priceCents: parsed.priceCents,
+      compareAtCents: parsed.compareAtCents,
       stockStatus: parsed.stockStatus,
       imageUrl,
       specs: parsed.specs,
