@@ -11,8 +11,9 @@ import { count } from "drizzle-orm";
 import Database from "better-sqlite3";
 import { drizzle } from "drizzle-orm/better-sqlite3";
 
-import { CATEGORIES, FALLBACK_CATEGORY, getCategory } from "../lib/catalog";
+import { CATEGORIES, getCategory } from "../lib/catalog";
 import { categoryIllustration, ILLUSTRATION_ATTRS } from "../lib/illustrations";
+import { productSvg } from "../lib/product-image";
 import { DEFAULT_DB_PATH } from "./paths";
 import { products, type StockStatus } from "./schema";
 
@@ -314,35 +315,9 @@ const PRODUCTS: SeedProduct[] = [
 /* Placeholder image generation                                        */
 /* ------------------------------------------------------------------ */
 
-function escapeXml(value: string): string {
-  return value
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;")
-    .replaceAll("'", "&#39;");
-}
-
-function productSvg(categorySlug: string, brand: string, model: string): string {
-  const category = getCategory(categorySlug) ?? FALLBACK_CATEGORY;
-  const illustration = categoryIllustration(categorySlug, category.accent) ?? "";
-  // Truncate long model names so they fit the fixed 640x480 canvas
-  // (strip dangling separators left by the slice).
-  const modelLine =
-    model.length > 30
-      ? `${model.slice(0, 29).replace(/[\s-]+$/, "")}…`
-      : model;
-
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480" role="img" aria-label="${escapeXml(`${category.name}: ${brand} ${model}`)}">
-  <rect width="640" height="480" fill="#ffffff"/>
-  <rect x="0.5" y="0.5" width="639" height="479" fill="none" stroke="#e4e4e7"/>
-  <g transform="translate(200,70)" ${ILLUSTRATION_ATTRS}>${illustration}</g>
-  <text x="320" y="330" text-anchor="middle" font-family="system-ui, sans-serif" font-size="15" font-weight="600" letter-spacing="3" fill="${category.accent}">${escapeXml(category.name.toUpperCase())}</text>
-  <text x="320" y="368" text-anchor="middle" font-family="system-ui, sans-serif" font-size="32" font-weight="600" fill="#18181b">${escapeXml(brand)}</text>
-  <text x="320" y="406" text-anchor="middle" font-family="system-ui, sans-serif" font-size="24" fill="#52525b">${escapeXml(modelLine)}</text>
-</svg>
-`;
-}
+/* ------------------------------------------------------------------ */
+/* Seed                                                               */
+/* ------------------------------------------------------------------ */
 
 /** Standalone illustration tile used on the home page (transparent bg). */
 function categorySvg(categorySlug: string, accent: string): string {
@@ -353,9 +328,6 @@ function categorySvg(categorySlug: string, accent: string): string {
 `;
 }
 
-/* ------------------------------------------------------------------ */
-/* Seed                                                               */
-/* ------------------------------------------------------------------ */
 
 const dbPath = process.env.DATABASE_PATH ?? path.resolve(DEFAULT_DB_PATH);
 mkdirSync(path.dirname(dbPath), { recursive: true });

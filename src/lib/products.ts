@@ -2,7 +2,7 @@ import { and, asc, count, desc, eq, gte, inArray, lte, ne, sql, type SQL } from 
 import { cache } from "react";
 
 import { db } from "@/db";
-import { products, type Product } from "@/db/schema";
+import { products, type Product, type StockStatus } from "@/db/schema";
 import type { CategoryFilter } from "@/lib/catalog";
 
 export const PRODUCT_SORTS = ["name", "price-asc", "price-desc"] as const;
@@ -39,6 +39,8 @@ export type ListProductsOptions = {
   specMin?: SpecMinFilter[];
   /** Case-insensitive text match against brand + model. */
   query?: string;
+  /** Restrict to this stock status. */
+  stockStatus?: StockStatus;
 };
 
 export type ProductListResult = {
@@ -72,6 +74,7 @@ function buildConditions(options: ListProductsOptions): SQL | undefined {
   const conditions: (SQL | undefined)[] = [];
 
   if (options.category) conditions.push(eq(products.category, options.category));
+  if (options.stockStatus) conditions.push(eq(products.stockStatus, options.stockStatus));
   if (options.brands?.length) conditions.push(inArray(products.brand, options.brands));
   if (options.priceMin !== undefined) conditions.push(gte(products.priceCents, options.priceMin));
   if (options.priceMax !== undefined) conditions.push(lte(products.priceCents, options.priceMax));
