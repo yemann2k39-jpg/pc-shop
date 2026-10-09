@@ -29,17 +29,29 @@ export async function transitionPendingOrder(
   const order = await getOrderByNumber(orderNumber);
   if (!order) return false;
 
-  const result = await db
-    .update(orders)
-    .set({ status })
-    .where(and(eq(orders.orderNumber, orderNumber), eq(orders.status, "pending")))
-    .run();
-  if (result.changes === 0) return false;
+  // SQLite serializes writes, so this transaction closes the crash window
+  // between the status flip and the redemption counter bump.
+  const changed = db.transaction((tx) => {
+    const result = tx
+      .update(orders)
+      .set({ status })
+      .where(and(eq(orders.orderNumber, orderNumber), eq(orders.status, "pending")))
+      .run();
+    if (result.changes === 0) return false;
 
-  if (status === "paid" && order.discountCode && !order.discountRedeemed) {
-    await redeemDiscountOnOrder(orderNumber, order.discountCode);
-  }
-  return true;
+    if (status === "paid" && order.discountCode && !order.discountRedeemed) {
+      const redeemResult = tx
+        .update(orders)
+        .set({ discountRedeemed: true })
+        .where(and(eq(orders.orderNumber, orderNumber), eq(orders.discountRedeemed, false)))
+        .run();
+      if (redeemResult.changes > 0) {
+        recordDiscountRedemption(order.discountCode);
+      }
+    }
+    return true;
+  });
+  return changed;
 }
 
 /** Sets discountRedeemed and bumps the code's usage counter (once per order). */

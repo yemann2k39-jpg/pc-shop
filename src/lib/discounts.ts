@@ -1,6 +1,6 @@
 import "server-only";
 
-import { eq, sql } from "drizzle-orm";
+import { and, eq, isNull, lt, or, sql } from "drizzle-orm";
 
 import { db } from "@/db";
 import { discounts, type Discount } from "@/db/schema";
@@ -45,6 +45,12 @@ export function computeDiscount(
       ? Math.floor((subtotalCents * discount.value) / 100)
       : Math.min(discount.value, subtotalCents);
 
+  // A code that covers the entire order is rejected: payment providers
+  // (Stripe) reject $0 sessions, so full-free orders are not supported.
+  if (discountCents >= subtotalCents) {
+    return { ok: false, reason: "This code cannot cover the full order amount." };
+  }
+
   return { ok: true, code: discount.code, label: discountLabel(discount), discountCents };
 }
 
@@ -75,12 +81,21 @@ export async function validateDiscountCode(
 }
 
 /**
- * Marks a discount as redeemed for a paid order. Idempotent per order: the
- * caller passes whether the order already counted this redemption.
+ * Marks a discount as redeemed. The increment is conditional so concurrent
+ * paid orders can never push timesUsed past maxRedemptions (SQLite
+ * serializes writes, making this compare-and-set race-free). Returns false
+ * when the limit was already reached.
  */
-export async function recordDiscountRedemption(code: string): Promise<void> {
-  await db
+export async function recordDiscountRedemption(code: string): Promise<boolean> {
+  const result = await db
     .update(discounts)
     .set({ timesUsed: sql`${discounts.timesUsed} + 1` })
-    .where(eq(discounts.code, code));
+    .where(
+      and(
+        eq(discounts.code, code),
+        or(isNull(discounts.maxRedemptions), lt(discounts.timesUsed, discounts.maxRedemptions)),
+      ),
+    )
+    .run();
+  return result.changes > 0;
 }
