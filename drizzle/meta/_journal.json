@@ -8,6 +8,13 @@
       "when": 1791141646884,
       "tag": "0000_dapper_young_avengers",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1791554361833,
+      "tag": "0001_lean_the_anarchist",
+      "breakpoints": true
     }
   ]
 }

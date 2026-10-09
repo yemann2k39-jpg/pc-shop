@@ -79,3 +79,23 @@ export const orders = sqliteTable(
 
 export type Order = typeof orders.$inferSelect;
 export type NewOrder = typeof orders.$inferInsert;
+
+/* ------------------------------- Builds -------------------------------- */
+
+export const builds = sqliteTable("builds", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  publicId: text("public_id").notNull().unique(),
+  name: text("name").notNull(),
+  ownerName: text("owner_name"),
+  note: text("note"),
+  /** Category slug -> product slug. Products re-hydrated at render time. */
+  items: text("items", { mode: "json" })
+    .$type<Record<string, string>>()
+    .notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+export type Build = typeof builds.$inferSelect;
+export type NewBuild = typeof builds.$inferInsert;

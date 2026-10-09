@@ -16,6 +16,12 @@ export function SiteHeader() {
         >
           Builder
         </Link>
+        <Link
+          href="/builds"
+          className="shrink-0 rounded-full border border-zinc-300 px-3 py-1.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100"
+        >
+          Builds
+        </Link>
         <nav
           aria-label="Product categories"
           className="scrollbar-none flex flex-1 items-center gap-1 overflow-x-auto text-sm font-medium text-zinc-600"

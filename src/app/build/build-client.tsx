@@ -1,12 +1,25 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Image from "next/image";
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 import type { Product } from "@/db/schema";
+import type { BuildViewerHandle } from "@/components/build-viewer";
 import { CATEGORIES } from "@/lib/catalog";
 import { checkCompatibility, estimateSystemDraw } from "@/lib/compatibility";
 import { formatPrice } from "@/lib/format";
+import { BUILD_METHODOLOGY, estimateForBuild } from "@/lib/performance";
+
+const BuildViewer = dynamic(() => import("@/components/build-viewer"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-full items-center justify-center text-sm text-zinc-400">
+      Loading 3D view…
+    </div>
+  ),
+});
 
 const SEVERITY_STYLES = {
   error: {
@@ -26,40 +39,24 @@ const SEVERITY_STYLES = {
   },
 } as const;
 
-/** Searchable per-slot part picker. */
+/** Compact per-slot picker row for the right-hand panel. */
 function PartSlot({
   categoryName,
   options,
   selected,
+  focused,
   onSelect,
   onClear,
 }: {
   categoryName: string;
   options: Product[];
   selected?: Product;
+  focused?: boolean;
   onSelect: (product: Product) => void;
   onClear: () => void;
 }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
-  const closeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    return () => {
-      if (closeTimer.current) clearTimeout(closeTimer.current);
-    };
-  }, []);
-
-  const openPicker = () => {
-    if (closeTimer.current) clearTimeout(closeTimer.current);
-    setQuery("");
-    setOpen(true);
-  };
-
-  const closePicker = () => {
-    setOpen(false);
-    setQuery("");
-  };
 
   const queryLower = query.trim().toLowerCase();
   const filtered = queryLower
@@ -70,32 +67,39 @@ function PartSlot({
 
   const choose = (product: Product) => {
     onSelect(product);
-    closePicker();
+    setOpen(false);
+    setQuery("");
   };
 
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-4">
+    <div
+      className={`rounded-xl border bg-white p-3 transition-all ${
+        focused ? "border-blue-600 ring-2 ring-blue-600/30" : "border-zinc-200"
+      }`}
+    >
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold text-zinc-900">{categoryName}</h3>
+        <h3 className="text-xs font-semibold tracking-wide text-zinc-500 uppercase">
+          {categoryName}
+        </h3>
         {selected ? (
           <button
             type="button"
             onClick={onClear}
             className="text-xs text-zinc-400 hover:text-red-600"
           >
-            Remove
+            Clear
           </button>
         ) : null}
       </div>
 
       {selected ? (
-        <div className="mt-3 flex items-center gap-3">
-          <div className="relative h-10 w-14 shrink-0 overflow-hidden rounded-md border border-zinc-200 bg-zinc-50">
+        <div className="mt-2 flex items-center gap-2.5">
+          <div className="relative h-9 w-12 shrink-0 overflow-hidden rounded-md border border-zinc-200 bg-zinc-50">
             <Image
               src={selected.imageUrl}
               alt=""
               fill
-              sizes="56px"
+              sizes="48px"
               className="object-cover"
               unoptimized
             />
@@ -110,73 +114,172 @@ function PartSlot({
           </div>
         </div>
       ) : (
-        <p className="mt-3 text-xs text-zinc-400">No part selected</p>
+        <p className="mt-2 text-xs text-zinc-400">Nothing selected</p>
       )}
 
-      <div className="mt-3">
-        {open ? (
-          <div>
-            <input
-              type="text"
-              // eslint-disable-next-line jsx-a11y/no-autofocus -- picker opens on explicit user action
-              autoFocus
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              onBlur={() => {
-                // Delay so option clicks register before the list closes.
-                closeTimer.current = setTimeout(() => setOpen(false), 150);
-              }}
-              onKeyDown={(event) => {
-                if (event.key === "Escape") {
-                  closePicker();
-                }
-              }}
-              placeholder={`Search ${categoryName.toLowerCase()}…`}
-              aria-label={`Search ${categoryName.toLowerCase()}`}
-              className="w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm focus:border-blue-600 focus:outline-none"
-            />
-            <ul className="mt-1 max-h-44 overflow-y-auto rounded-md border border-zinc-200">
-              {filtered.length === 0 ? (
-                <li className="px-2 py-2 text-xs text-zinc-400">No matches</li>
-              ) : (
-                filtered.map((option) => (
-                  <li key={option.id}>
-                    <button
-                      type="button"
-                      onMouseDown={() => choose(option)}
-                      onClick={() => choose(option)}
-                      className="flex w-full items-center justify-between gap-2 px-2 py-1.5 text-left text-sm hover:bg-zinc-100"
-                    >
-                      <span className="truncate">
-                        <span className="text-zinc-400">{option.brand}</span>{" "}
-                        {option.model}
-                      </span>
-                      <span className="shrink-0 text-xs text-zinc-500">
-                        {formatPrice(option.priceCents)}
-                      </span>
-                    </button>
-                  </li>
-                ))
-              )}
-            </ul>
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={openPicker}
-            aria-expanded={open}
-            className="w-full rounded-md border border-zinc-300 px-2 py-1.5 text-xs font-medium text-zinc-600 hover:border-zinc-400"
-          >
-            {selected ? "Change part" : "Choose a part"}
-          </button>
-        )}
-      </div>
+      {open ? (
+        <div className="mt-2">
+          <input
+            type="text"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Escape") {
+                setOpen(false);
+                setQuery("");
+              }
+            }}
+            placeholder={`Search ${categoryName.toLowerCase()}…`}
+            aria-label={`Search ${categoryName.toLowerCase()}`}
+            autoFocus
+            className="w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm focus:border-blue-600 focus:outline-none"
+          />
+          <ul className="mt-1 max-h-44 overflow-y-auto rounded-md border border-zinc-200">
+            {filtered.length === 0 ? (
+              <li className="px-2 py-2 text-xs text-zinc-400">No matches</li>
+            ) : (
+              filtered.map((option) => (
+                <li key={option.id}>
+                  <button
+                    type="button"
+                    onClick={() => choose(option)}
+                    className="flex w-full items-center justify-between gap-2 px-2 py-1.5 text-left text-sm hover:bg-zinc-100"
+                  >
+                    <span className="truncate">
+                      <span className="text-zinc-400">{option.brand}</span>{" "}
+                      {option.model}
+                    </span>
+                    <span className="shrink-0 text-xs text-zinc-500">
+                      {formatPrice(option.priceCents)}
+                    </span>
+                  </button>
+                </li>
+              ))
+            )}
+          </ul>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          aria-expanded={open}
+          className="mt-2 w-full rounded-md border border-zinc-300 px-2 py-1.5 text-xs font-medium text-zinc-600 hover:border-zinc-400"
+        >
+          {selected ? "Change" : "Choose a part"}
+        </button>
+      )}
     </div>
   );
 }
 
-export function BuildClient({ products }: { products: Product[] }) {
-  const [selection, setSelection] = useState<Record<string, Product>>({});
+/** Save-and-share card: posts the build and surfaces the share link. */
+function SaveBuildForm({ items }: { items: Record<string, Product> }) {
+  const [name, setName] = useState("");
+  const [note, setNote] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [savedUrl, setSavedUrl] = useState<string | null>(null);
+
+  if (Object.keys(items).length === 0) return null;
+
+  const save = async () => {
+    setError(null);
+    setSaving(true);
+    try {
+      const response = await fetch("/api/builds", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name,
+          note: note || undefined,
+          items: Object.fromEntries(
+            Object.entries(items).map(([category, product]) => [category, product.slug]),
+          ),
+        }),
+      });
+      const data = (await response.json()) as { url?: string; error?: string };
+      if (!response.ok || !data.url) {
+        setError(data.error ?? "Could not save the build.");
+        setSaving(false);
+        return;
+      }
+      setSavedUrl(data.url);
+      setSaving(false);
+    } catch {
+      setError("Network error. Please try again.");
+      setSaving(false);
+    }
+  };
+
+  if (savedUrl) {
+    return (
+      <div role="status" className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+        <p className="text-sm font-medium text-emerald-800">Build saved!</p>
+        <Link href={savedUrl} className="mt-1 inline-block text-sm text-blue-700 underline">
+          Open your shared build page
+        </Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="rounded-xl border border-zinc-200 bg-white p-4">
+      <h2 className="text-sm font-semibold text-zinc-900">Save &amp; share</h2>
+      {Object.keys(items).length < CATEGORIES.length ? (
+        <p className="mt-2 text-xs text-zinc-400">
+          Select all 8 parts to save and share this build.
+        </p>
+      ) : null}
+      <div className="mt-2 space-y-2">
+        <input
+          type="text"
+          value={name}
+          onChange={(event) => setName(event.target.value)}
+          placeholder="Build name (required)"
+          maxLength={200}
+          aria-label="Build name"
+          className="w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm focus:border-blue-600 focus:outline-none"
+        />
+        <textarea
+          value={note}
+          onChange={(event) => setNote(event.target.value)}
+          placeholder="Notes (optional) — what is this build for?"
+          maxLength={500}
+          rows={2}
+          aria-label="Build notes"
+          className="w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm focus:border-blue-600 focus:outline-none"
+        />
+      </div>
+      {error ? (
+        <p role="alert" className="mt-2 text-xs text-red-600">
+          {error}
+        </p>
+      ) : null}
+      <button
+        type="button"
+        onClick={save}
+        disabled={saving || !name.trim() || Object.keys(items).length < CATEGORIES.length}
+        className="mt-2 w-full rounded-lg bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        {saving ? "Saving…" : "Save build"}
+      </button>
+    </div>
+  );
+}
+
+export function BuildClient({
+  products,
+  initialSelection,
+}: {
+  products: Product[];
+  initialSelection?: Record<string, Product>;
+}) {
+  const [selection, setSelection] = useState<Record<string, Product>>(
+    initialSelection ?? {},
+  );
+  const buildPerf = useMemo(() => estimateForBuild(selection), [selection]);
+  const [focused, setFocused] = useState<string | null>(null);
+  const viewerRef = useRef<BuildViewerHandle>(null);
 
   const byCategory = useMemo(() => {
     const map = new Map<string, Product[]>();
@@ -201,37 +304,58 @@ export function BuildClient({ products }: { products: Product[] }) {
   const psuWattage = psu?.specs.wattageW;
   const errorCount = findings.filter((f) => f.severity === "error").length;
   const warningCount = findings.filter((f) => f.severity === "warning").length;
+  const errorCategories = useMemo(
+    () =>
+      new Set(
+        findings.filter((f) => f.severity === "error").flatMap((f) => f.parts),
+      ),
+    [findings],
+  );
+  const accents = useMemo(
+    () => Object.fromEntries(CATEGORIES.map((c) => [c.slug, c.accent])),
+    [],
+  );
 
   return (
     <div className="flex flex-col gap-6 lg:flex-row">
-      <div className="grid min-w-0 flex-1 grid-cols-1 gap-4 sm:grid-cols-2">
-        {CATEGORIES.map((category) => (
-          <PartSlot
-            key={category.slug}
-            categoryName={category.name}
-            options={byCategory.get(category.slug) ?? []}
-            selected={selection[category.slug]}
-            onSelect={(product) =>
-              setSelection((prev) => ({ ...prev, [category.slug]: product }))
-            }
-            onClear={() =>
-              setSelection((prev) => {
-                const next = { ...prev };
-                delete next[category.slug];
-                return next;
-              })
-            }
+      {/* 3D viewport */}
+      <div className="min-w-0 flex-1">
+        <div className="relative h-[26rem] overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-950 lg:sticky lg:top-20 lg:h-[calc(100vh-8.5rem)]">
+          <BuildViewer
+            ref={viewerRef}
+            selection={selection}
+            accents={accents}
+            errorCategories={errorCategories}
+            onPartClick={setFocused}
           />
-        ))}
+          <div className="absolute right-3 top-3 flex gap-2">
+            <button
+              type="button"
+              onClick={() => viewerRef.current?.resetCamera()}
+              className="rounded-lg bg-white/90 px-3 py-1.5 text-xs font-medium text-zinc-800 shadow-sm backdrop-blur hover:bg-white"
+            >
+              Reset camera
+            </button>
+            <button
+              type="button"
+              onClick={() => viewerRef.current?.toggleAutoRotate()}
+              className="rounded-lg bg-white/90 px-3 py-1.5 text-xs font-medium text-zinc-800 shadow-sm backdrop-blur hover:bg-white"
+            >
+              Auto-rotate
+            </button>
+          </div>
+          <div className="absolute bottom-3 left-3 rounded-md bg-black/50 px-2 py-1 text-xs text-zinc-300">
+            drag to orbit · scroll to zoom · click a part to focus its slot
+          </div>
+        </div>
       </div>
 
-      <aside className="lg:w-96 lg:shrink-0">
-        <div className="sticky top-20 space-y-4">
-          <div className="rounded-xl border border-zinc-200 bg-white p-4">
-            <h2 className="text-sm font-semibold text-zinc-900">
-              Build status
-            </h2>
-            <div className="mt-3 flex flex-wrap gap-2 text-xs font-medium">
+      {/* right panel: status, pickers, compatibility */}
+      <aside className="w-full shrink-0 space-y-3 lg:w-[21rem]">
+        <div className="rounded-xl border border-zinc-200 bg-white p-4">
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-sm font-semibold text-zinc-900">Build status</h2>
+            <div className="flex gap-2 text-xs font-medium">
               <span
                 className={`rounded-full px-2.5 py-1 ${
                   errorCount > 0
@@ -245,71 +369,137 @@ export function BuildClient({ products }: { products: Product[] }) {
                 {warningCount} {warningCount === 1 ? "warning" : "warnings"}
               </span>
             </div>
-
-            <dl className="mt-4 space-y-2 border-t border-zinc-200 pt-3 text-sm">
-              <div className="flex justify-between">
-                <dt className="text-zinc-500">Total price</dt>
-                <dd className="font-semibold text-zinc-900">
-                  {formatPrice(totalCents)}
-                </dd>
-              </div>
-              <div className="flex justify-between">
-                <dt className="text-zinc-500">Estimated draw</dt>
-                <dd className="font-medium text-zinc-900">
-                  {draw !== undefined ? `~${draw}W` : "—"}
-                </dd>
-              </div>
-              {psu && typeof psuWattage === "number" ? (
-                <div className="flex justify-between">
-                  <dt className="text-zinc-500">PSU output</dt>
-                  <dd className="font-medium text-zinc-900">{psuWattage}W</dd>
-                </div>
-              ) : null}
-            </dl>
           </div>
+          <dl className="mt-3 space-y-2 text-sm">
+            <div className="flex justify-between">
+              <dt className="text-zinc-500">Total price</dt>
+              <dd className="font-semibold text-zinc-900">
+                {formatPrice(totalCents)}
+              </dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-zinc-500">Estimated draw</dt>
+              <dd className="font-medium text-zinc-900">
+                {draw !== undefined ? `~${draw}W` : "—"}
+              </dd>
+            </div>
+            {psu && typeof psuWattage === "number" ? (
+              <div className="flex justify-between">
+                <dt className="text-zinc-500">PSU output</dt>
+                <dd className="font-medium text-zinc-900">{psuWattage}W</dd>
+              </div>
+            ) : null}
+          </dl>
 
-          <div className="rounded-xl border border-zinc-200 bg-white p-4">
-            <h2 className="text-sm font-semibold text-zinc-900">
-              Compatibility
-            </h2>
-            <ul className="mt-3 space-y-2">
-              {findings.length === 0 ? (
-                <li className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-                  All good — no compatibility problems detected.
-                </li>
-              ) : (
-                findings.map((finding) => {
-                  const style = SEVERITY_STYLES[finding.severity];
-                  return (
-                    <li
-                      key={finding.rule}
-                      className="flex items-start gap-2.5 rounded-lg border border-zinc-200 px-3 py-2"
-                    >
-                      <span
-                        className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${style.dot}`}
-                        aria-hidden="true"
-                      />
-                      <div className="min-w-0">
-                        <p className="text-sm leading-snug text-zinc-800">
-                          {finding.message}
-                        </p>
-                        <span
-                          className={`mt-1 inline-block rounded border px-1.5 py-0.5 text-[10px] font-semibold uppercase ${style.chip}`}
+          <div className="mt-3 border-t border-zinc-200 pt-3">
+            <h3 className="text-xs font-semibold tracking-wide text-zinc-500 uppercase">
+              Estimated performance
+            </h3>
+            {!buildPerf.complete ? (
+              <p className="mt-2 text-xs text-zinc-400">
+                Select all 8 parts to see FPS estimates — RAM speed, cooling,
+                and platform choices affect real performance.
+              </p>
+            ) : (
+              <>
+                {buildPerf.scenarios.map((scenario) => (
+                  <div key={scenario.name} className="mt-2 first:mt-1">
+                    <p className="text-xs font-semibold text-zinc-700">
+                      {scenario.name}
+                    </p>
+                    <div className="mt-1 grid grid-cols-3 gap-1 text-center">
+                      {scenario.estimates.map((estimate) => (
+                        <div
+                          key={estimate.resolution}
+                          className="rounded-md bg-zinc-50 px-1 py-1.5"
                         >
-                          {style.label}
-                        </span>
-                      </div>
-                    </li>
-                  );
-                })
-              )}
-            </ul>
-            <p className="mt-3 text-xs text-zinc-400">
-              Estimates are based on catalog specs and simple rules — always
-              double-check critical builds.
-            </p>
+                          <p className="text-[10px] text-zinc-500">
+                            {estimate.resolution}
+                          </p>
+                          <p className="text-sm font-semibold text-zinc-900">
+                            {estimate.fpsLow}–{estimate.fpsHigh}
+                          </p>
+                          <p className="text-[10px] text-zinc-400">
+                            {estimate.bottleneck === "Balanced"
+                              ? "balanced"
+                              : estimate.bottleneck === "GPU-bound"
+                                ? "GPU-led"
+                                : "CPU-led"}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                <p className="mt-2 text-[10px] leading-relaxed text-zinc-400">
+                  {BUILD_METHODOLOGY} {buildPerf.notes.join(" ")}
+                </p>
+              </>
+            )}
           </div>
         </div>
+
+        {CATEGORIES.map((category) => (
+          <PartSlot
+            key={category.slug}
+            categoryName={category.name}
+            options={byCategory.get(category.slug) ?? []}
+            selected={selection[category.slug]}
+            focused={focused === category.slug}
+            onSelect={(product) =>
+              setSelection((prev) => ({ ...prev, [category.slug]: product }))
+            }
+            onClear={() =>
+              setSelection((prev) => {
+                const next = { ...prev };
+                delete next[category.slug];
+                return next;
+              })
+            }
+          />
+        ))}
+
+        <div className="rounded-xl border border-zinc-200 bg-white p-4">
+          <h2 className="text-sm font-semibold text-zinc-900">Compatibility</h2>
+          <ul className="mt-3 space-y-2">
+            {findings.length === 0 ? (
+              <li className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                All good — no compatibility problems detected.
+              </li>
+            ) : (
+              findings.map((finding) => {
+                const style = SEVERITY_STYLES[finding.severity];
+                return (
+                  <li
+                    key={finding.rule}
+                    className="flex items-start gap-2.5 rounded-lg border border-zinc-200 px-3 py-2"
+                  >
+                    <span
+                      className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${style.dot}`}
+                      aria-hidden="true"
+                    />
+                    <div className="min-w-0">
+                      <p className="text-sm leading-snug text-zinc-800">
+                        {finding.message}
+                      </p>
+                      <span
+                        className={`mt-1 inline-block rounded border px-1.5 py-0.5 text-[10px] font-semibold uppercase ${style.chip}`}
+                      >
+                        {style.label}
+                      </span>
+                    </div>
+                  </li>
+                );
+              })
+            )}
+          </ul>
+          <p className="mt-3 text-xs text-zinc-400">
+            Estimates are based on catalog specs and simple rules — always
+            double-check critical builds.
+          </p>
+        </div>
+
+        <SaveBuildForm items={selection} />
       </aside>
     </div>
   );
