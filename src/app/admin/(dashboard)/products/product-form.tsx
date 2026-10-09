@@ -42,6 +42,7 @@ export function ProductForm({ product }: { product?: Product }) {
 
   return (
     <form action={formAction} className="grid grid-cols-1 gap-6 lg:grid-cols-3">
+      {product ? <input type="hidden" name="originalSlug" value={product.slug} /> : null}
       <div className="space-y-5 lg:col-span-2">
         <section className="rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm">
           <h2 className="text-sm font-semibold text-zinc-900">Basics</h2>
