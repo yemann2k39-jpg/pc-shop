@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useCart } from "@/lib/cart-context";
 import { formatPrice } from "@/lib/format";
@@ -48,6 +48,44 @@ export default function CheckoutPage() {
 
   const totalCents = Math.max(0, subtotalCents - discountCents);
 
+  // Re-validate the applied code whenever the cart changes, so the shown
+  // discount always matches what the server will compute at checkout.
+  useEffect(() => {
+    if (!appliedCode || !isLoaded || items.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const response = await fetch("/api/discounts/validate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            code: appliedCode,
+            items: items.map((item) => ({ slug: item.slug, qty: item.qty })),
+          }),
+        });
+        const data = (await response.json()) as {
+          ok?: boolean;
+          discountCents?: number;
+          reason?: string;
+        };
+        if (cancelled) return;
+        if (data.ok && typeof data.discountCents === "number") {
+          setDiscountCents(data.discountCents);
+        } else {
+          setCodeMessage(data.reason ?? "This code no longer applies to your cart.");
+          setAppliedCode(null);
+          setDiscountCents(0);
+          setDiscountLabel(null);
+        }
+      } catch {
+        // transient network issue: keep the current display
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [appliedCode, isLoaded, items]);
+
   const applyCode = async () => {
     setCodeMessage(null);
     if (!codeInput.trim()) return;
@@ -56,7 +94,10 @@ export default function CheckoutPage() {
       const response = await fetch("/api/discounts/validate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: codeInput, subtotalCents }),
+        body: JSON.stringify({
+          code: codeInput,
+          items: items.map((item) => ({ slug: item.slug, qty: item.qty })),
+        }),
       });
       const data = (await response.json()) as {
         ok?: boolean;

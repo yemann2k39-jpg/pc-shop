@@ -102,6 +102,14 @@ export const discounts = sqliteTable("discounts", {
   value: integer("value").notNull(),
   /** Minimum order subtotal in cents for the code to apply (0 = none). */
   minSubtotalCents: integer("min_subtotal_cents").notNull().default(0),
+  /**
+   * Product slugs the code applies to. Empty = the whole order; non-empty =
+   * the discount is computed only on the matching items' subtotal.
+   */
+  productSlugs: text("product_slugs", { mode: "json" })
+    .$type<string[]>()
+    .notNull()
+    .default([]),
   /** Hard cap on redemptions across all orders (null = unlimited). */
   maxRedemptions: integer("max_redemptions"),
   timesUsed: integer("times_used").notNull().default(0),

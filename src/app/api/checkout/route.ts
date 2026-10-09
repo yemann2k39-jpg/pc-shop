@@ -101,10 +101,15 @@ export async function POST(request: Request) {
   }
 
   // Optional discount: always re-validated server-side, never trusted.
+  // Scoping is evaluated against the DB-priced items collected above.
   let discountCode: string | null = null;
   let discountCents = 0;
   if (typeof body.discountCode === "string" && body.discountCode.trim()) {
-    const validation = await validateDiscountCode(body.discountCode, subtotalCents);
+    const validation = await validateDiscountCode(
+      body.discountCode,
+      items.map((item) => ({ slug: item.slug, unitPriceCents: item.unitPriceCents, qty: item.qty })),
+      subtotalCents,
+    );
     if (!validation.ok) {
       return NextResponse.json({ error: validation.reason }, { status: 409 });
     }

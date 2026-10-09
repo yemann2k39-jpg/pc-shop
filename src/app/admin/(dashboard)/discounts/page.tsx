@@ -1,8 +1,8 @@
-import { desc } from "drizzle-orm";
+import { asc, desc } from "drizzle-orm";
 import type { Metadata } from "next";
 
 import { db } from "@/db";
-import { discounts, type Discount } from "@/db/schema";
+import { discounts, products, type Discount } from "@/db/schema";
 import { formatPrice } from "@/lib/format";
 
 import { setDiscountActive } from "./actions";
@@ -19,6 +19,9 @@ function valueLabel(discount: Discount): string {
 
 function conditions(discount: Discount): string[] {
   const out: string[] = [];
+  if (discount.productSlugs.length > 0) {
+    out.push(`${discount.productSlugs.length} product${discount.productSlugs.length === 1 ? "" : "s"} only`);
+  }
   if (discount.minSubtotalCents > 0) {
     out.push(`min. order ${formatPrice(discount.minSubtotalCents)}`);
   }
@@ -34,18 +37,24 @@ function conditions(discount: Discount): string[] {
 }
 
 export default async function AdminDiscountsPage() {
-  const rows = await db.select().from(discounts).orderBy(desc(discounts.createdAt));
+  const [rows, catalog] = await Promise.all([
+    db.select().from(discounts).orderBy(desc(discounts.createdAt)),
+    db
+      .select({ slug: products.slug, brand: products.brand, model: products.model })
+      .from(products)
+      .orderBy(asc(products.brand), asc(products.model)),
+  ]);
 
   return (
     <div>
       <header className="mb-6">
         <h1 className="text-2xl font-bold tracking-tight text-zinc-900">Discounts & promotions</h1>
         <p className="mt-1 text-sm text-zinc-500">
-          Codes are applied at checkout and validated server-side on every order.
+          Codes are applied at checkout and validated server-side on every order. Scope codes to specific products or leave them store-wide.
         </p>
       </header>
 
-      <DiscountForm />
+      <DiscountForm products={catalog} />
 
       <div className="mt-6 overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-sm">
         <table className="w-full text-sm">

@@ -1,0 +1,1 @@
+ALTER TABLE `discounts` ADD `product_slugs` text DEFAULT '[]' NOT NULL;

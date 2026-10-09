@@ -21,10 +21,16 @@ export function discountLabel(discount: Discount): string {
     : `${(discount.value / 100).toFixed(2)} USD off`;
 }
 
-/** Computes the discount in cents for a subtotal, or why it does not apply. */
-export function computeDiscount(
+/**
+ * Computes the discount against the cart, honoring product scoping: an empty
+ * `productSlugs` list applies to the whole order, otherwise only the matching
+ * items' subtotal is discounted. Prices come from the server's own product
+ * rows, never from the client.
+ */
+export function computeDiscountForItems(
   discount: Discount,
-  subtotalCents: number,
+  items: Array<{ slug: string; unitPriceCents: number; qty: number }>,
+  orderSubtotalCents: number,
 ): DiscountValidation {
   if (!discount.active) return { ok: false, reason: "This code is no longer active." };
   if (discount.expiresAt && discount.expiresAt.getTime() < Date.now()) {
@@ -33,21 +39,35 @@ export function computeDiscount(
   if (discount.maxRedemptions !== null && discount.timesUsed >= discount.maxRedemptions) {
     return { ok: false, reason: "This code has reached its redemption limit." };
   }
-  if (subtotalCents < discount.minSubtotalCents) {
+
+  const scoped = discount.productSlugs;
+  const eligibleCents = scoped.length
+    ? items
+        .filter((item) => scoped.includes(item.slug))
+        .reduce((sum, item) => sum + item.unitPriceCents * item.qty, 0)
+    : orderSubtotalCents;
+
+  if (eligibleCents === 0) {
     return {
       ok: false,
-      reason: `This code requires a minimum order of ${(discount.minSubtotalCents / 100).toFixed(2)} USD.`,
+      reason: "This code only applies to specific products that are not in your cart.",
+    };
+  }
+  if (eligibleCents < discount.minSubtotalCents) {
+    return {
+      ok: false,
+      reason: `This code requires a minimum (eligible) order of ${(discount.minSubtotalCents / 100).toFixed(2)} USD.`,
     };
   }
 
   const discountCents =
     discount.type === "percent"
-      ? Math.floor((subtotalCents * discount.value) / 100)
-      : Math.min(discount.value, subtotalCents);
+      ? Math.floor((eligibleCents * discount.value) / 100)
+      : Math.min(discount.value, eligibleCents);
 
   // A code that covers the entire order is rejected: payment providers
   // (Stripe) reject $0 sessions, so full-free orders are not supported.
-  if (discountCents >= subtotalCents) {
+  if (discountCents >= orderSubtotalCents) {
     return { ok: false, reason: "This code cannot cover the full order amount." };
   }
 
@@ -70,14 +90,18 @@ export async function findDiscount(code: string): Promise<Discount | undefined> 
   return discount;
 }
 
-/** Server-side validation for the checkout validate endpoint. */
+/**
+ * Server-side validation against DB-priced cart items. Item prices passed in
+ * must come from the products table, not the client.
+ */
 export async function validateDiscountCode(
   rawCode: string,
-  subtotalCents: number,
+  items: Array<{ slug: string; unitPriceCents: number; qty: number }>,
+  orderSubtotalCents: number,
 ): Promise<DiscountValidation> {
   const discount = await findDiscount(rawCode);
   if (!discount) return { ok: false, reason: "This code is not valid." };
-  return computeDiscount(discount, subtotalCents);
+  return computeDiscountForItems(discount, items, orderSubtotalCents);
 }
 
 /**

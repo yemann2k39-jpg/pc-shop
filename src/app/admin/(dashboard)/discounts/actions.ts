@@ -1,10 +1,10 @@
 "use server";
 
-import { eq } from "drizzle-orm";
+import { eq, inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
 import { db } from "@/db";
-import { discounts, DISCOUNT_TYPES, type DiscountType } from "@/db/schema";
+import { discounts, DISCOUNT_TYPES, products, type DiscountType } from "@/db/schema";
 import { requireAdmin } from "@/lib/auth";
 import { normalizeCode } from "@/lib/discounts";
 
@@ -22,6 +22,15 @@ export async function createDiscount(
   const minSubtotal = Number(String(formData.get("minSubtotal") ?? "0") || "0");
   const maxRedemptionsRaw = String(formData.get("maxRedemptions") ?? "").trim();
   const expiresAtRaw = String(formData.get("expiresAt") ?? "").trim();
+  const productSlugsRaw = String(formData.get("productSlugs") ?? "");
+  const productSlugs = [
+    ...new Set(
+      productSlugsRaw
+        .split(",")
+        .map((slug) => slug.trim())
+        .filter(Boolean),
+    ),
+  ];
 
   if (!/^[A-Z0-9_-]{3,40}$/.test(code)) {
     return { error: "Code must be 3-40 letters, numbers, dashes, or underscores." };
@@ -60,6 +69,18 @@ export async function createDiscount(
     expiresAt = parsed;
   }
 
+  // Validate the scoped slugs against the catalog so codes can't target
+  // products that don't exist.
+  if (productSlugs.length > 0) {
+    const known = await db
+      .select({ slug: products.slug })
+      .from(products)
+      .where(inArray(products.slug, productSlugs));
+    if (known.length !== productSlugs.length) {
+      return { error: "One or more selected products no longer exist." };
+    }
+  }
+
   const [existing] = await db
     .select({ id: discounts.id })
     .from(discounts)
@@ -76,6 +97,7 @@ export async function createDiscount(
     minSubtotalCents: Math.round(minSubtotal * 100),
     maxRedemptions,
     expiresAt,
+    productSlugs,
   });
 
   revalidatePath("/admin/discounts");
