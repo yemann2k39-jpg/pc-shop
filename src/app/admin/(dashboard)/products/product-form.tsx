@@ -29,8 +29,14 @@ export function ProductForm({ product }: { product?: Product }) {
   const [brand, setBrand] = useState(product?.brand ?? "");
   const [model, setModel] = useState(product?.model ?? "");
   const [accent, setAccent] = useState(ACCENTS[0]);
-  const [price, setPrice] = useState(product ? (product.priceCents / 100).toFixed(2) : "");
-  const [compareAt, setCompareAt] = useState(product?.compareAtCents ? (product.compareAtCents / 100).toFixed(2) : "");
+  const [price, setPrice] = useState(
+    product
+      ? ((product.compareAtCents ?? product.priceCents) / 100).toFixed(2)
+      : "",
+  );
+  const [discountPercent, setDiscountPercent] = useState<string>(
+    product?.compareAtCents ? String(Math.round((1 - product.priceCents / product.compareAtCents) * 100)) : "",
+  );
   const [state, formAction, pending] = useActionState(
     product ? updateProduct : createProduct,
     initialState,
@@ -40,9 +46,10 @@ export function ProductForm({ product }: { product?: Product }) {
   const previewSrc = `/api/admin/product-preview?category=${encodeURIComponent(category)}&brand=${encodeURIComponent(brand || "Brand")}&model=${encodeURIComponent(model || "Model")}&accent=${encodeURIComponent(accent)}`;
 
   const salePercent =
-    Number(price) > 0 && Number(compareAt) > Number(price)
-      ? Math.round((1 - Number(price) / Number(compareAt)) * 100)
+    Number(price) > 0 && Number(discountPercent) >= 1 && Number(discountPercent) <= 95
+      ? Math.round(Number(discountPercent))
       : null;
+  const finalPrice = salePercent !== null ? Number(price) * (1 - salePercent / 100) : null;
 
   const inputClass =
     "mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus:border-zinc-900 focus:ring-2 focus:ring-zinc-900/10";
@@ -69,7 +76,11 @@ export function ProductForm({ product }: { product?: Product }) {
                 ))}
               </select>
               {product ? (
-                <p className="mt-1 text-xs text-zinc-400">Category can&apos;t be changed after creation.</p>
+                <>
+                  {/* Disabled selects are not submitted — keep the category. */}
+                  <input type="hidden" name="category" value={category} />
+                  <p className="mt-1 text-xs text-zinc-400">Category can&apos;t be changed after creation.</p>
+                </>
               ) : null}
             </div>
             <div>
@@ -90,7 +101,7 @@ export function ProductForm({ product }: { product?: Product }) {
             </div>
             <div>
               <label htmlFor="price" className="block text-sm font-medium text-zinc-700">
-                Price (USD) <span className="font-normal text-zinc-400">— what customers pay</span>
+                Price (USD) <span className="font-normal text-zinc-400">— original price</span>
               </label>
               <input
                 id="price"
@@ -101,32 +112,33 @@ export function ProductForm({ product }: { product?: Product }) {
                 required
                 value={price}
                 onChange={(event) => setPrice(event.target.value)}
-                placeholder="206.10"
+                placeholder="229.00"
                 className={inputClass}
               />
             </div>
             <div>
-              <label htmlFor="compareAt" className="block text-sm font-medium text-zinc-700">
-                Original price (USD, optional)
+              <label htmlFor="discountPercent" className="block text-sm font-medium text-zinc-700">
+                Discount % <span className="font-normal text-zinc-400">(optional)</span>
               </label>
               <input
-                id="compareAt"
-                name="compareAt"
+                id="discountPercent"
+                name="discountPercent"
                 type="number"
-                step="0.01"
+                step="1"
                 min="0"
-                value={compareAt}
-                onChange={(event) => setCompareAt(event.target.value)}
-                placeholder="229.00"
+                max="95"
+                value={discountPercent}
+                onChange={(event) => setDiscountPercent(event.target.value)}
+                placeholder="No discount"
                 className={inputClass}
               />
-              {salePercent !== null ? (
+              {salePercent !== null && finalPrice !== null ? (
                 <p className="mt-1 text-xs font-medium text-emerald-600">
-                  On sale: {salePercent}% off — the original price will be shown crossed out.
+                  Customers pay {`$${finalPrice.toFixed(2)}`} — original price shown crossed out ({salePercent}% off).
                 </p>
               ) : (
                 <p className="mt-1 text-xs text-zinc-400">
-                  Set higher than the price to show a crossed-out original (e.g. 229 original, 206.10 price = 10% off).
+                  Example: price 229 with 10% off → customers pay 206.10 and see 229 crossed out.
                 </p>
               )}
             </div>

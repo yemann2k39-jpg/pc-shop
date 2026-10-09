@@ -39,23 +39,24 @@ function parseProductForm(
   if (!Number.isFinite(price) || price < 0 || price > 100000) {
     return { error: "Price must be a number between 0 and 100000." };
   }
-  const priceCents = Math.round(price * 100);
-  if (!STOCK_STATUSES.includes(stockStatus as StockStatus)) {
-    return { error: "Choose a valid stock status." };
+  const originalCents = Math.round(price * 100);
+
+  // Optional discount percent: the entered price is the ORIGINAL price and
+  // the customer pays the discounted amount (compare-at = original).
+  const discountRaw = String(formData.get("discountPercent") ?? "").trim();
+  let priceCents = originalCents;
+  let compareAtCents: number | null = null;
+  if (discountRaw) {
+    const discountPercent = Number(discountRaw);
+    if (!Number.isInteger(discountPercent) || discountPercent < 1 || discountPercent > 95) {
+      return { error: "Discount must be a whole number between 1 and 95 percent." };
+    }
+    compareAtCents = originalCents;
+    priceCents = Math.max(1, Math.round((originalCents * (100 - discountPercent)) / 100));
   }
 
-  // Optional compare-at (original) price for sale display.
-  const compareAtRaw = String(formData.get("compareAt") ?? "").trim();
-  let compareAtCents: number | null = null;
-  if (compareAtRaw) {
-    const compareAt = Number(compareAtRaw);
-    if (!Number.isFinite(compareAt) || compareAt < 0 || compareAt > 100000) {
-      return { error: "Compare-at price must be a number between 0 and 100000." };
-    }
-    compareAtCents = Math.round(compareAt * 100);
-    if (compareAtCents <= priceCents) {
-      return { error: "Compare-at price must be higher than the sale price." };
-    }
+  if (!STOCK_STATUSES.includes(stockStatus as StockStatus)) {
+    return { error: "Choose a valid stock status." };
   }
 
   // Structured specs: only known fields for the category, correctly typed.
