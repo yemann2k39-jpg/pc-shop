@@ -1,73 +1,58 @@
 # PC Shop
 
-A full-stack PC-parts store where compatibility, power and honest FPS numbers
-are computed live while you build — in 3D.
+A full-stack PC-parts store where compatibility, power draw and FPS estimates
+are computed live while you build your PC in 3D.
 
-![PC Shop hero](docs/hero.png)
+Pick your parts, spin the rig, and watch the numbers change. A rules engine
+catches incompatible builds on every selection, performance estimates come
+from real published benchmarks instead of marketing numbers, checkout runs
+through a swappable payment gateway, and a shopping assistant answers
+questions with real products and real prices from the catalog.
 
-Pick your parts, spin the rig, and watch the estimate change. A rules engine
-catches incompatible builds on every selection, FPS estimates are grounded in
-real published benchmarks instead of marketing numbers, checkout runs through
-a swappable payment-gateway abstraction, and a catalog-grounded shopping
-assistant answers questions with real products and real prices.
+## Features
 
-## Highlights
-
-**3D build viewer** — every selected part renders as a GLB model inside the
-case in a live react-three-fiber scene with orbit controls.
-
-![3D builder](docs/builder.png)
-
-**Benchmark-grounded FPS estimates** — real per-GPU per-resolution averages
-(TechPowerUp) combined with CPU gaming ceilings (GPUCheck) through a
-`min(GPU, CPU cap)` model. When a 4090 is paired with a budget CPU, the
-estimate says so instead of hiding the bottleneck:
-
-![CPU bottleneck warning](docs/bottleneck.png)
-
-**Live compatibility checks** — 12 rules (sockets, DDR4/DDR5, PSU headroom,
-GPU clearance, cooler height, chipset/RAM tiers …) run in the browser on every
-selection. Incompatible picks pulse red with a plain-English fix; the same
-pure functions also back the assistant's tools, so client and server can
-never drift apart.
-
-**Catalog-grounded assistant** — a chat powered by any OpenAI-compatible
-endpoint (Groq's free tier in dev) with four tools: product search, product
-details, compatibility checking and build-performance estimation. The system
-prompt forbids stating any spec, price or compatibility claim that didn't
-come from a tool result, and answers link to real product pages.
-
-![AI shopping assistant](docs/assistant.png)
-
-**Swappable payment gateway** — checkout logic is written once against a
-two-method provider interface and works unchanged across three backends:
-a custom MiniPay gateway (hosted
-checkout + HMAC-SHA256-signed webhooks), Stripe test mode, and a local mock
-gateway. Webhooks verify signatures over the raw request body and transition
-orders `pending → paid` with a compare-and-set guard, so retried callbacks
-can't double-resolve.
-
-![MiniPay hosted checkout](docs/checkout.png)
-
-**Everything else a store needs** — cart, checkout with full server-side
-re-pricing (client prices are never trusted), discount codes
-(percent/fixed, product-scoped, redemption caps), scrypt-hashed customer
-accounts with revocable server-side sessions, an admin dashboard for
-products / orders / discounts, and community builds shareable by public link.
+- **3D build viewer.** Every selected part renders as a GLB model inside the
+  case in a react-three-fiber scene with orbit controls.
+- **Benchmark-grounded FPS estimates.** Per-GPU per-resolution averages from
+  TechPowerUp combined with CPU gaming ceilings from GPUCheck through a
+  min(GPU, CPU cap) model. If a powerful GPU is paired with a weak CPU, the
+  UI says so instead of hiding the bottleneck.
+- **Live compatibility checks.** 12 rules covering sockets, DDR4/DDR5, PSU
+  headroom, GPU clearance, cooler height and more run in the browser on every
+  selection. Incompatible picks turn red with a plain-English explanation.
+  The same functions also power the assistant's tools, so client and server
+  cannot drift apart.
+- **Catalog-grounded shopping assistant.** A chat that works with any
+  OpenAI-compatible endpoint (Groq's free tier in development). It has four
+  tools: product search, product details, compatibility checking and build
+  performance estimation. It is only allowed to state specs, prices and
+  compatibility claims that came from a tool result, and it links to real
+  product pages.
+- **Swappable payment gateway.** Checkout is written once against a small
+  provider interface and works unchanged across three backends: a custom
+  MiniPay gateway (hosted checkout with HMAC-SHA256 signed webhooks), Stripe
+  test mode, and a local mock gateway. Webhooks verify signatures over the
+  raw request body and move orders from pending to paid with a
+  compare-and-set guard, so retried callbacks cannot resolve an order twice.
+- **Full commerce stack.** Cart, checkout with server-side re-pricing (the
+  client's prices are never trusted), discount codes with product scoping and
+  redemption caps, customer accounts with scrypt-hashed passwords and
+  revocable server-side sessions, an admin dashboard for products, orders and
+  discounts, and community builds shareable by public link.
 
 ## Tech stack
 
-| Layer      | Choices                                                            |
-| ---------- | ------------------------------------------------------------------ |
-| Framework  | Next.js 16 (App Router, RSC, Server Actions) · React 19 · TypeScript |
-| Styling    | Tailwind CSS v4, zinc monochrome palette                            |
-| 3D         | react-three-fiber · drei · Three.js (GLB part models)               |
-| Data       | SQLite (better-sqlite3) · Drizzle ORM + generated migrations        |
-| Payments   | MiniPay gateway · Stripe Checkout (test mode) · local mock          |
-| Assistant  | OpenAI-compatible chat completions + tool calling (Groq in dev)     |
-| Security   | node:crypto (scrypt, HMAC-SHA256, timingSafeEqual) · httpOnly cookies |
+| Layer     | Choices                                                              |
+| --------- | -------------------------------------------------------------------- |
+| Framework | Next.js 16 (App Router, RSC, Server Actions), React 19, TypeScript   |
+| Styling   | Tailwind CSS v4, zinc monochrome palette                             |
+| 3D        | react-three-fiber, drei, Three.js (GLB part models)                  |
+| Data      | SQLite (better-sqlite3), Drizzle ORM with generated migrations       |
+| Payments  | MiniPay gateway, Stripe Checkout (test mode), local mock             |
+| Assistant | OpenAI-compatible chat completions with tool calling (Groq in dev)   |
+| Security  | node:crypto (scrypt, HMAC-SHA256, timingSafeEqual), httpOnly cookies |
 
-## How it's put together
+## How it is put together
 
 ```
 src/
@@ -79,58 +64,59 @@ src/
     api/           checkout, builds, ai/chat, discounts, mock-pay
     minipay/       callback/        HMAC-verified payment webhook
   components/      client islands: 3D viewer, builder, cart, AI assistant
-  lib/             pure business logic — catalog taxonomy, compatibility
+  lib/             pure business logic: catalog taxonomy, compatibility
                    rules, performance model, orders, discounts, payments, ai
-  db/              Drizzle schema (7 tables) + seeds (catalog, benchmarks)
+  db/              Drizzle schema (7 tables) and seeds (catalog, benchmarks)
   scripts/         verification: verify-compat, verify-perf, smoke-auth
 ```
 
-Server components query Drizzle directly for catalog/order/admin pages; the
-builder, 3D viewer, cart and assistant are client islands. All business
-logic lives in pure `lib/` modules shared byte-for-byte by the browser and
-the assistant's server-side tools.
+Server components query Drizzle directly for the catalog, order and admin
+pages. The builder, 3D viewer, cart and assistant are client islands. All
+business logic lives in pure modules under `lib/` and is shared by the
+browser and the assistant's server-side tools.
 
 ## Getting started
 
-**Prerequisites:** Node.js 20.9+, pnpm 12+.
+Prerequisites: Node.js 20.9+ and pnpm 12+.
 
 ```bash
 pnpm install
-cp .env.example .env.local   # fill in what you want (everything optional)
+cp .env.example .env.local   # fill in what you want, everything is optional
 pnpm db:migrate
-pnpm db:seed                 # ~100 real components + benchmark data
+pnpm db:seed                 # about 100 real components plus benchmark data
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000). The SQLite database
-lives at `data/pc-shop.db` (override with `DATABASE_PATH`). 3D part models
-under `public/models/` are curated GLB files (see [MODELS.md](MODELS.md)).
+Then open http://localhost:3000. The SQLite database lives at
+`data/pc-shop.db` (override with `DATABASE_PATH`). The 3D part models under
+`public/models/` are curated GLB files, see MODELS.md.
 
 ### Environment variables
 
-| Variable              | Purpose                                                    |
-| --------------------- | ---------------------------------------------------------- |
-| `STRIPE_SECRET_KEY`   | Enables Stripe test mode when set                          |
-| `MINIPAY_BASE_URL`    | MiniPay gateway base URL (`http://localhost:3000` in dev)  |
-| `MINIPAY_API_KEY`     | MiniPay merchant API key (X-API-Key header)                |
-| `AI_BASE_URL` / `AI_API_KEY` / `AI_MODEL` | Any OpenAI-compatible endpoint; Groq free tier works |
-| `ADMIN_PASSWORD`      | Required for `/admin` (single-admin auth)                  |
-| `NEXT_PUBLIC_APP_URL` | Public base URL used for payment redirects                 |
+| Variable                                 | Purpose                                              |
+| ---------------------------------------- | ---------------------------------------------------- |
+| `STRIPE_SECRET_KEY`                      | Enables Stripe test mode when set                    |
+| `MINIPAY_BASE_URL`                       | MiniPay gateway base URL                             |
+| `MINIPAY_API_KEY`                        | MiniPay merchant API key (X-API-Key header)          |
+| `AI_BASE_URL`, `AI_API_KEY`, `AI_MODEL`  | Any OpenAI-compatible endpoint, Groq free tier works |
+| `ADMIN_PASSWORD`                         | Required for `/admin` (single-admin auth)            |
+| `NEXT_PUBLIC_APP_URL`                    | Public base URL used for payment redirects           |
 
 With no payment keys configured, checkout falls back to a local mock payment
-page — approve or decline, zero setup. No real money moves in any mode.
+page where you can approve or decline the payment. No real money moves in
+any mode.
 
 ### Database commands
 
 ```bash
 pnpm db:generate   # generate SQL migrations from the Drizzle schema
 pnpm db:migrate    # apply migrations
-pnpm db:seed       # seed catalog + benchmark rows
+pnpm db:seed       # seed catalog and benchmark rows
 ```
 
 ## Verification
 
-Verification scripts run against the real seeded database:
+The verification scripts run against the real seeded database:
 
 ```bash
 pnpm verify:compat   # known-good and known-bad builds produce expected findings
@@ -142,11 +128,11 @@ pnpm build           # production build
 
 ## Scripts
 
-| Script           | Purpose                                        |
-| ---------------- | ---------------------------------------------- |
-| `pnpm dev`       | Start the development server                   |
-| `pnpm build`     | Create a production build                      |
-| `pnpm start`     | Serve the production build                     |
-| `pnpm lint`      | Run ESLint                                     |
-| `pnpm db:*`      | Migration generation / apply / seed            |
-| `pnpm verify:*`  | Compatibility & performance verification       |
+| Script          | Purpose                                  |
+| --------------- | ---------------------------------------- |
+| `pnpm dev`      | Start the development server             |
+| `pnpm build`    | Create a production build                |
+| `pnpm start`    | Serve the production build               |
+| `pnpm lint`     | Run ESLint                               |
+| `pnpm db:*`     | Migration generation, apply, seed        |
+| `pnpm verify:*` | Compatibility and performance checks     |
