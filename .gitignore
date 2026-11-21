@@ -53,3 +53,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local dev-session scratch (not part of the app)
+/AGENTS.md
+/CLAUDE.md
+/HANDOFF.md
+/plan*.json
+/src/scripts/inspect-glb.cjs
+/.tickets/
