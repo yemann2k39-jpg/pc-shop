@@ -148,7 +148,17 @@ export default function CartPage() {
                       aria-label={`Decrease quantity of ${item.brand} ${item.model}`}
                       className="h-8 w-8 rounded-md border border-zinc-300 text-lg leading-none text-zinc-600 hover:bg-zinc-100"
                     >
-                      −
+                      <svg
+                        viewBox="0 0 20 20"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        className="mx-auto h-4 w-4"
+                        aria-hidden="true"
+                      >
+                        <path d="M5 10h10" />
+                      </svg>
                     </button>
                     <QtyInput item={item} />
                     <button
@@ -195,7 +205,7 @@ export default function CartPage() {
             </dl>
             <Link
               href="/checkout"
-              className="mt-4 block rounded-lg bg-blue-700 px-4 py-3 text-center text-sm font-semibold text-white hover:bg-blue-800"
+              className="mt-4 block rounded-lg bg-zinc-900 px-4 py-3 text-center text-sm font-semibold text-white hover:bg-zinc-700"
             >
               Proceed to checkout
             </Link>

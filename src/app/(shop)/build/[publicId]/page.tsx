@@ -6,6 +6,7 @@ import { inArray } from "drizzle-orm";
 
 import { db } from "@/db";
 import { products, type Product } from "@/db/schema";
+import { AddBuildToCart } from "@/components/add-build-to-cart";
 import { getCategory } from "@/lib/catalog";
 import { formatPrice, STOCK_LABELS } from "@/lib/format";
 import { getBuildByPublicId } from "@/lib/builds";
@@ -45,6 +46,15 @@ export default async function BuildDetailPage({ params }: BuildPageProps) {
   const perf = estimateForBuild(selection);
   const totalCents = selected.reduce((sum, p) => sum + p.priceCents, 0);
   const complete = Object.keys(selection).length === slugs.length;
+  const cartParts = selected.map((product) => ({
+    category: product.category,
+    slug: product.slug,
+    brand: product.brand,
+    model: product.model,
+    imageUrl: product.imageUrl,
+    priceCents: product.priceCents,
+    inStock: product.stockStatus !== "out_of_stock",
+  }));
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8">
@@ -159,6 +169,9 @@ export default async function BuildDetailPage({ params }: BuildPageProps) {
             <div className="flex justify-between border-t border-zinc-200 px-4 py-3 text-base font-bold text-zinc-900">
               <span>Total</span>
               <span>{formatPrice(totalCents)}</span>
+            </div>
+            <div className="px-4 pb-4">
+              <AddBuildToCart parts={cartParts} />
             </div>
           </div>
 

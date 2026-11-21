@@ -57,7 +57,7 @@ export const CATEGORIES: CategoryConfig[] = [
   {
     slug: "motherboard",
     name: "Motherboards",
-    tagline: "Boards for AM5 and LGA1700",
+    tagline: "The foundation of your build",
     accent: "#0e7490",
     tileClass: "bg-cyan-50",
     cardSpecs: ["socket", "formFactor"],
@@ -70,7 +70,7 @@ export const CATEGORIES: CategoryConfig[] = [
   {
     slug: "ram",
     name: "Memory",
-    tagline: "DDR4 and DDR5 memory kits",
+    tagline: "Memory for gaming and multitasking",
     accent: "#b45309",
     tileClass: "bg-amber-50",
     cardSpecs: ["capacityGB", "speedMHz"],

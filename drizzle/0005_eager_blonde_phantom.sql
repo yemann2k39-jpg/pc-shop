@@ -1,0 +1,1 @@
+ALTER TABLE `products` ADD `popularity` integer DEFAULT 0 NOT NULL;

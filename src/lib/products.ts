@@ -5,10 +5,16 @@ import { db } from "@/db";
 import { products, type Product, type StockStatus } from "@/db/schema";
 import type { CategoryFilter } from "@/lib/catalog";
 
-export const PRODUCT_SORTS = ["name", "price-asc", "price-desc"] as const;
+export const PRODUCT_SORTS = [
+  "best-selling",
+  "name",
+  "price-asc",
+  "price-desc",
+] as const;
 export type ProductSort = (typeof PRODUCT_SORTS)[number];
 
 export const SORT_LABELS: Record<ProductSort, string> = {
+  "best-selling": "Best selling",
   name: "Name",
   "price-asc": "Price: low to high",
   "price-desc": "Price: high to low",
@@ -17,7 +23,7 @@ export const SORT_LABELS: Record<ProductSort, string> = {
 export function parseProductSort(value: string | undefined): ProductSort {
   return (PRODUCT_SORTS as readonly string[]).includes(value ?? "")
     ? (value as ProductSort)
-    : "name";
+    : "best-selling";
 }
 
 export type SpecExactFilter = { key: string; value: string };
@@ -100,13 +106,15 @@ export async function listProducts(
   const sort = options.sort ?? "name";
 
   const where = buildConditions(options);
-  // `id` as the final tiebreaker keeps pagination stable when prices repeat.
+  // `id` as the final tiebreaker keeps pagination stable when values repeat.
   const orderBy =
     sort === "price-asc"
       ? [asc(products.priceCents), asc(products.id)]
       : sort === "price-desc"
         ? [desc(products.priceCents), asc(products.id)]
-        : [asc(products.brand), asc(products.model), asc(products.id)];
+        : sort === "best-selling"
+          ? [desc(products.popularity), asc(products.id)]
+          : [asc(products.brand), asc(products.model), asc(products.id)];
 
   const items = await db
     .select()
@@ -167,6 +175,20 @@ export async function getCategoryProductCounts(): Promise<Map<string, number>> {
     .from(products)
     .groupBy(products.category);
   return new Map(rows.map((row) => [row.category, row.value]));
+}
+
+/** Per-status product counts for one category (used on category headers). */
+export async function getCategoryStockCounts(
+  category: string,
+): Promise<{ inStock: number; outOfStock: number }> {
+  const rows = await db
+    .select({ status: products.stockStatus, value: count() })
+    .from(products)
+    .where(eq(products.category, category))
+    .groupBy(products.stockStatus);
+  const get = (status: StockStatus) =>
+    rows.find((row) => row.status === status)?.value ?? 0;
+  return { inStock: get("in_stock") + get("low_stock"), outOfStock: get("out_of_stock") };
 }
 
 /* ------------------------------------------------------------------ */

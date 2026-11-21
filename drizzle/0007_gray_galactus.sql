@@ -1,0 +1,1 @@
+ALTER TABLE `builds` ADD `user_id` integer REFERENCES users(id);

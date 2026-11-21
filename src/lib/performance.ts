@@ -1,24 +1,49 @@
 /**
- * Performance estimation from curated benchmark data.
+ * Performance estimation from real benchmark data.
  *
- * The dataset stores a RELATIVE performance index per GPU and CPU product
- * (higher = faster), approximated from published aggregate benchmark charts
- * (TechPowerUp GPU/CPU databases, aggregated gaming benchmarks, 2024–2025
- * data). Indices are not exact FPS numbers — the estimator converts them
- * into honest FPS *ranges* per resolution.
+ * Primary path: the seeded `benchmark_data` table holds MEASURED aggregate
+ * FPS (TechPowerUp game database averages per GPU per resolution; GPUCheck
+ * 1080p CPU ceilings). FPS for a pairing = min(GPU fps, CPU cap) per
+ * resolution — the same model GPUCheck/PC-Builds use.
  *
- * Two scenarios:
- *   AAA Ultra  — typical modern AAA title, high/ultra settings
- *   Esports    — competitive titles (CS2/Valorant class), high settings
- * Each scenario has its own GPU baseline, resolution scaling, and (for
- * esports) its own CPU index table — X3D chips lead esports, while top
- * silicon shares AAA honors.
+ * Fallback path: the legacy hand-tuned relative indices, used when a part
+ * has no benchmark rows (e.g. newly added catalog items).
  *
- * Ranges are ±8% — estimates, never fake precision.
+ * Ranges: ±8% for complete builds, ±15% for partial (GPU+CPU only).
  */
 
 import type { Product } from "@/db/schema";
 import { CATEGORIES } from "@/lib/catalog";
+
+/** Serializable benchmark lookup passed from the server to the client. */
+export type BenchmarkLookup = {
+  /** gpu[scenario]["slug@resolution"] -> avg fps. */
+  gpu: Record<string, Record<string, number>>;
+  /** cpu[scenario][slug] -> avg fps (1080p ceiling, applies at all resolutions). */
+  cpu: Record<string, Record<string, number>>;
+};
+
+export function buildBenchmarkLookup(
+  rows: Array<{
+    slug: string;
+    kind: "gpu" | "cpu";
+    scenario: string;
+    resolution: string | null;
+    avgFps: number;
+  }>,
+): BenchmarkLookup {
+  const lookup: BenchmarkLookup = { gpu: {}, cpu: {} };
+  for (const row of rows) {
+    if (row.kind === "gpu" && row.resolution) {
+      lookup.gpu[row.scenario] ??= {};
+      lookup.gpu[row.scenario][`${row.slug}@${row.resolution}`] = row.avgFps;
+    } else if (row.kind === "cpu") {
+      lookup.cpu[row.scenario] ??= {};
+      lookup.cpu[row.scenario][row.slug] = row.avgFps;
+    }
+  }
+  return lookup;
+}
 
 export type Resolution = "1080p" | "1440p" | "4K";
 
@@ -31,12 +56,16 @@ export type PerfEstimate = {
   fpsLow: number;
   fpsHigh: number;
   bottleneck: Bottleneck;
+  /** Positive = CPU is limiting the GPU by this % (0 when GPU-bound). */
+  cpuLimitPct: number;
 };
 
 export type ScenarioName = "AAA Ultra" | "Esports";
 
 export type BuildPerformance = {
   complete: boolean;
+  /** True when estimates come from the measured benchmark table. */
+  measured: boolean;
   scenarios: Array<{
     name: ScenarioName;
     estimates: PerfEstimate[];
@@ -45,8 +74,8 @@ export type BuildPerformance = {
 };
 
 export const SOURCES = [
-  "TechPowerUp GPU & CPU databases — relative performance charts",
-  "Aggregated published gaming benchmarks (2024–2025)",
+  "TechPowerUp game FPS database — measured averages per GPU and resolution",
+  "GPUCheck — measured CPU 1080p ceilings (paired with an RTX 4090)",
 ];
 
 /** Relative GPU gaming index at 1440p ultra (RTX 4090 = 100). Key: product slug. */
@@ -113,6 +142,28 @@ export function hasCpuEstimate(slug: string): boolean {
   return slug in CPU_INDEX_AAA;
 }
 
+/** Approximate AAA bottleneck % of the GPU held back by the CPU (0 if none). */
+export function approximateBottleneckPct(
+  gpuSlug: string,
+  cpuSlug: string,
+): number {
+  const gpuIndex = GPU_INDEX[gpuSlug];
+  const cpuIndex = CPU_INDEX_AAA[cpuSlug];
+  if (!gpuIndex || !cpuIndex) return 0;
+  const gpuFps = (gpuIndex / 100) * AAA.base * AAA.resGpu["1080p"];
+  const cpuCap = cpuIndex * AAA.resCpu["1080p"];
+  if (cpuCap >= gpuFps) return 0;
+  return Math.round((1 - cpuCap / gpuFps) * 100);
+}
+
+export function isHighEndGpu(slug: string): boolean {
+  return (GPU_INDEX[slug] ?? 0) >= 64;
+}
+
+export function isWeakCpu(slug: string): boolean {
+  return (CPU_INDEX_AAA[slug] ?? 100) <= 80;
+}
+
 function round(value: number): number {
   return Math.max(1, Math.round(value));
 }
@@ -124,33 +175,43 @@ function classify(gpuFps: number, cpuCap: number): Bottleneck {
   return "Balanced";
 }
 
+function toEstimate(
+  resolution: Resolution,
+  gpuFps: number,
+  cpuCap: number,
+  rangePct: number,
+): PerfEstimate {
+  const fps = Math.min(gpuFps, cpuCap);
+  const cpuLimitPct =
+    cpuCap < gpuFps ? Math.round((1 - cpuCap / gpuFps) * 100) : 0;
+  return {
+    resolution,
+    fpsLow: round(fps * (1 - rangePct)),
+    fpsHigh: round(fps * (1 + rangePct)),
+    bottleneck: classify(gpuFps, cpuCap),
+    cpuLimitPct,
+  };
+}
+
 function estimate(
   gpuIndex: number,
   cpuIndex: number,
   mode: "aaa" | "esports",
 ): PerfEstimate[] {
   return RESOLUTIONS.map((resolution) => {
-    let fps: number;
     let gpuFps: number;
     let cpuCap: number;
     if (mode === "aaa") {
-      gpuFps = gpuIndex * AAA.base * AAA.resGpu[resolution];
+      gpuFps = (gpuIndex / 100) * AAA.base * AAA.resGpu[resolution];
       cpuCap = cpuIndex * AAA.resCpu[resolution];
-      fps = Math.min(gpuFps, cpuCap);
     } else {
       gpuFps =
         Math.pow(gpuIndex / 100, ESPORTS.gpuExponent) *
         ESPORTS.gpuBase *
         ESPORTS.resGpu[resolution];
       cpuCap = cpuIndex * ESPORTS.resCpu[resolution];
-      fps = Math.min(gpuFps, cpuCap);
     }
-    return {
-      resolution,
-      fpsLow: round(fps * 0.92),
-      fpsHigh: round(fps * 1.08),
-      bottleneck: classify(gpuFps, cpuCap),
-    };
+    return toEstimate(resolution, gpuFps, cpuCap, 0.08);
   });
 }
 
@@ -181,23 +242,23 @@ export function estimateForCpu(cpu: Product): PerfEstimate[] | null {
 }
 
 /**
- * Whole-build estimates for BOTH scenarios. Returns `complete: false` until
- * every category is filled — RAM speed, cooling, and platform choices affect
- * real performance, so partial builds get no numbers.
+ * Whole-build estimates for BOTH scenarios, from measured benchmark data.
+ *
+ * - Complete build (all 8 parts): ±8% ranges.
+ * - Partial build with GPU + CPU chosen: ±15% ranges so users get early
+ *   guidance while picking parts.
+ * - Parts without benchmark rows fall back to the legacy index tables.
  */
 export function estimateForBuild(
   selection: Partial<Record<string, Product>>,
+  benchmarks?: BenchmarkLookup,
 ): BuildPerformance {
   const complete = CATEGORIES.every((c) => selection[c.slug]);
-  if (!complete) {
-    return { complete: false, scenarios: [], notes: [] };
-  }
-
   const gpu = selection.gpu;
   const cpu = selection.cpu;
-  const gpuIndex = gpu ? (GPU_INDEX[gpu.slug] ?? 0) : 0;
-  const cpuAaa = cpu ? (CPU_INDEX_AAA[cpu.slug] ?? 0) : 0;
-  const cpuEsports = cpu ? (CPU_INDEX_ESPORTS[cpu.slug] ?? 0) : 0;
+  if (!complete && (!gpu || !cpu)) {
+    return { complete: false, measured: false, scenarios: [], notes: [] };
+  }
 
   const notes: string[] = [];
   // DDR4 platforms trade a little performance even with the same parts.
@@ -208,24 +269,53 @@ export function estimateForBuild(
   notes.push("Cooling and case airflow affect sustained boost clocks — not modeled.");
 
   const factor = ddr4 ? 0.92 : 1;
+  const rangePct = complete ? 0.08 : 0.15;
+  const measured = Boolean(benchmarks);
 
-  const scenarios = [
-    {
-      name: "AAA Ultra" as ScenarioName,
-      estimates: estimate(gpuIndex * factor, cpuAaa * factor, "aaa"),
-    },
-    {
-      name: "Esports" as ScenarioName,
-      estimates: estimate(
-        gpuIndex * factor,
-        cpuEsports * factor,
-        "esports",
-      ),
-    },
+  const scenarioNames: Array<{ name: ScenarioName; mode: "aaa" | "esports" }> = [
+    { name: "AAA Ultra", mode: "aaa" },
+    { name: "Esports", mode: "esports" },
   ];
 
-  return { complete: true, scenarios, notes };
+  const scenarios = scenarioNames.map(({ name, mode }) => ({
+    name,
+    estimates: RESOLUTIONS.map((resolution) => {
+      let gpuFps: number;
+      let cpuCap: number;
+      if (benchmarks) {
+        gpuFps = (benchmarks.gpu[mode]?.[`${gpu!.slug}@${resolution}`] ?? 0) * factor;
+        cpuCap = (benchmarks.cpu[mode]?.[cpu!.slug] ?? 0) * factor;
+        // Legacy fallback for parts missing from the benchmark table.
+        if (gpuFps === 0)
+          gpuFps =
+            ((GPU_INDEX[gpu!.slug] ?? 0) / 100) *
+            (mode === "aaa"
+              ? AAA.base * AAA.resGpu[resolution]
+              : Math.pow((GPU_INDEX[gpu!.slug] ?? 0) / 100, ESPORTS.gpuExponent) * ESPORTS.gpuBase * ESPORTS.resGpu[resolution]) *
+            factor;
+        if (cpuCap === 0)
+          cpuCap =
+            ((mode === "aaa" ? CPU_INDEX_AAA[cpu!.slug] : CPU_INDEX_ESPORTS[cpu!.slug]) ?? 0) *
+            (mode === "aaa" ? AAA.resCpu[resolution] : ESPORTS.resCpu[resolution]) *
+            factor;
+      } else {
+        gpuFps =
+          ((GPU_INDEX[gpu!.slug] ?? 0) / 100) *
+          (mode === "aaa"
+            ? AAA.base * AAA.resGpu[resolution]
+            : Math.pow((GPU_INDEX[gpu!.slug] ?? 0) / 100, ESPORTS.gpuExponent) * ESPORTS.gpuBase * ESPORTS.resGpu[resolution]) *
+          factor;
+        cpuCap =
+          ((mode === "aaa" ? CPU_INDEX_AAA[cpu!.slug] : CPU_INDEX_ESPORTS[cpu!.slug]) ?? 0) *
+          (mode === "aaa" ? AAA.resCpu[resolution] : ESPORTS.resCpu[resolution]) *
+          factor;
+      }
+      return toEstimate(resolution, gpuFps, cpuCap, rangePct);
+    }),
+  }));
+
+  return { complete, measured, scenarios, notes };
 }
 
 export const BUILD_METHODOLOGY =
-  "FPS ranges are estimates derived from relative benchmark indices (sources below), capped by the weaker of GPU/CPU. Real results vary by game, settings, resolution scaling, and drivers.";
+  "FPS ranges come from measured benchmark data (see sources), combined as min(GPU fps, CPU cap) per resolution. Real results vary by game, settings, and drivers.";

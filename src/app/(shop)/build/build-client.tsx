@@ -10,7 +10,11 @@ import type { BuildViewerHandle } from "@/components/build-viewer";
 import { CATEGORIES } from "@/lib/catalog";
 import { checkCompatibility, estimateSystemDraw } from "@/lib/compatibility";
 import { formatPrice } from "@/lib/format";
-import { BUILD_METHODOLOGY, estimateForBuild } from "@/lib/performance";
+import {
+  BUILD_METHODOLOGY,
+  estimateForBuild,
+  type BenchmarkLookup,
+} from "@/lib/performance";
 
 const BuildViewer = dynamic(() => import("@/components/build-viewer"), {
   ssr: false,
@@ -47,6 +51,7 @@ function PartSlot({
   focused,
   onSelect,
   onClear,
+  stickControl,
 }: {
   categoryName: string;
   options: Product[];
@@ -54,6 +59,7 @@ function PartSlot({
   focused?: boolean;
   onSelect: (product: Product) => void;
   onClear: () => void;
+  stickControl?: { count: number; onChange: (count: number) => void };
 }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -117,6 +123,35 @@ function PartSlot({
         <p className="mt-2 text-xs text-zinc-400">Nothing selected</p>
       )}
 
+      {stickControl && selected ? (
+        <div className="mt-2 flex items-center justify-between rounded-md border border-zinc-200 px-2 py-1.5">
+          <span className="text-xs text-zinc-500">Sticks in build</span>
+          <span className="flex items-center gap-2">
+            <button
+              type="button"
+              aria-label="Remove a RAM stick"
+              disabled={stickControl.count <= 1}
+              onClick={() => stickControl.onChange(stickControl.count - 1)}
+              className="h-6 w-6 rounded-md border border-zinc-300 text-sm leading-none text-zinc-600 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              −
+            </button>
+            <span className="w-4 text-center text-sm font-semibold text-zinc-900">
+              {stickControl.count}
+            </span>
+            <button
+              type="button"
+              aria-label="Add a RAM stick"
+              disabled={stickControl.count >= 4}
+              onClick={() => stickControl.onChange(stickControl.count + 1)}
+              className="h-6 w-6 rounded-md border border-zinc-300 text-sm leading-none text-zinc-600 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              +
+            </button>
+          </span>
+        </div>
+      ) : null}
+
       {open ? (
         <div className="mt-2">
           <input
@@ -132,7 +167,7 @@ function PartSlot({
             placeholder={`Search ${categoryName.toLowerCase()}…`}
             aria-label={`Search ${categoryName.toLowerCase()}`}
             autoFocus
-            className="w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm focus:border-blue-600 focus:outline-none"
+            className="w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm focus:border-zinc-900 focus:outline-none"
           />
           <ul className="mt-1 max-h-44 overflow-y-auto rounded-md border border-zinc-200">
             {filtered.length === 0 ? (
@@ -238,7 +273,7 @@ function SaveBuildForm({ items }: { items: Record<string, Product> }) {
           placeholder="Build name (required)"
           maxLength={200}
           aria-label="Build name"
-          className="w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm focus:border-blue-600 focus:outline-none"
+          className="w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm focus:border-zinc-900 focus:outline-none"
         />
         <textarea
           value={note}
@@ -247,7 +282,7 @@ function SaveBuildForm({ items }: { items: Record<string, Product> }) {
           maxLength={500}
           rows={2}
           aria-label="Build notes"
-          className="w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm focus:border-blue-600 focus:outline-none"
+          className="w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm focus:border-zinc-900 focus:outline-none"
         />
       </div>
       {error ? (
@@ -270,14 +305,28 @@ function SaveBuildForm({ items }: { items: Record<string, Product> }) {
 export function BuildClient({
   products,
   initialSelection,
+  benchmarks,
 }: {
   products: Product[];
   initialSelection?: Record<string, Product>;
+  benchmarks: BenchmarkLookup;
 }) {
   const [selection, setSelection] = useState<Record<string, Product>>(
     initialSelection ?? {},
   );
-  const buildPerf = useMemo(() => estimateForBuild(selection), [selection]);
+  const [ramSticks, setRamSticks] = useState(2);
+  const [ssd, setSsd] = useState<Product | undefined>(undefined);
+  const [hdd, setHdd] = useState<Product | undefined>(undefined);
+  // Compatibility/perf/save work off the 8 canonical categories: the first
+  // chosen drive stands in as the storage part.
+  const buildSelection = useMemo(() => {
+    const storage = ssd ?? hdd;
+    return storage ? { ...selection, storage } : selection;
+  }, [selection, ssd, hdd]);
+  const buildPerf = useMemo(
+    () => estimateForBuild(buildSelection, benchmarks),
+    [buildSelection, benchmarks],
+  );
   const [focused, setFocused] = useState<string | null>(null);
   const viewerRef = useRef<BuildViewerHandle>(null);
 
@@ -294,12 +343,14 @@ export function BuildClient({
     return map;
   }, [products]);
 
-  const findings = useMemo(() => checkCompatibility(selection), [selection]);
-  const totalCents = useMemo(
-    () => Object.values(selection).reduce((sum, p) => sum + p.priceCents, 0),
-    [selection],
+  const findings = useMemo(() => checkCompatibility(buildSelection), [buildSelection]);
+  const totalCents = useMemo(    () =>
+      Object.values(selection).reduce((sum, p) => sum + p.priceCents, 0) +
+      (ssd?.priceCents ?? 0) +
+      (hdd?.priceCents ?? 0),
+    [selection, ssd, hdd],
   );
-  const draw = estimateSystemDraw(selection);
+  const draw = estimateSystemDraw(buildSelection);
   const psu = selection.psu;
   const psuWattage = psu?.specs.wattageW;
   const errorCount = findings.filter((f) => f.severity === "error").length;
@@ -327,6 +378,9 @@ export function BuildClient({
             accents={accents}
             errorCategories={errorCategories}
             onPartClick={setFocused}
+            ramSticks={ramSticks}
+            ssdDrive={ssd}
+            hddDrive={hdd}
           />
           <div className="absolute right-3 top-3 flex gap-2">
             <button
@@ -394,11 +448,16 @@ export function BuildClient({
           <div className="mt-3 border-t border-zinc-200 pt-3">
             <h3 className="text-xs font-semibold tracking-wide text-zinc-500 uppercase">
               Estimated performance
+              {buildPerf.scenarios.length > 0 && !buildPerf.complete ? (
+                <span className="ml-1 font-normal normal-case text-zinc-400">
+                  (provisional)
+                </span>
+              ) : null}
             </h3>
-            {!buildPerf.complete ? (
+            {buildPerf.scenarios.length === 0 ? (
               <p className="mt-2 text-xs text-zinc-400">
-                Select all 8 parts to see FPS estimates — RAM speed, cooling,
-                and platform choices affect real performance.
+                Pick a GPU and CPU to see FPS estimates — add all 8 parts to
+                sharpen the range to ±8%.
               </p>
             ) : (
               <>
@@ -424,13 +483,24 @@ export function BuildClient({
                               ? "balanced"
                               : estimate.bottleneck === "GPU-bound"
                                 ? "GPU-led"
-                                : "CPU-led"}
+                                : `CPU −${estimate.cpuLimitPct}%`}
                           </p>
                         </div>
                       ))}
                     </div>
                   </div>
                 ))}
+                {buildPerf.scenarios.some((s) =>
+                  s.estimates.some((e) => e.cpuLimitPct >= 20),
+                ) ? (
+                  <p
+                    role="status"
+                    className="mt-2 rounded-md bg-amber-50 px-2 py-1.5 text-[11px] text-amber-800"
+                  >
+                    ⚠ Your CPU is holding this GPU back at lower resolutions —
+                    consider a stronger CPU to use the GPU fully.
+                  </p>
+                ) : null}
                 <p className="mt-2 text-[10px] leading-relaxed text-zinc-400">
                   {BUILD_METHODOLOGY} {buildPerf.notes.join(" ")}
                 </p>
@@ -439,26 +509,7 @@ export function BuildClient({
           </div>
         </div>
 
-        {CATEGORIES.map((category) => (
-          <PartSlot
-            key={category.slug}
-            categoryName={category.name}
-            options={byCategory.get(category.slug) ?? []}
-            selected={selection[category.slug]}
-            focused={focused === category.slug}
-            onSelect={(product) =>
-              setSelection((prev) => ({ ...prev, [category.slug]: product }))
-            }
-            onClear={() =>
-              setSelection((prev) => {
-                const next = { ...prev };
-                delete next[category.slug];
-                return next;
-              })
-            }
-          />
-        ))}
-
+        {/* compatibility findings — right below build status */}
         <div className="rounded-xl border border-zinc-200 bg-white p-4">
           <h2 className="text-sm font-semibold text-zinc-900">Compatibility</h2>
           <ul className="mt-3 space-y-2">
@@ -499,7 +550,54 @@ export function BuildClient({
           </p>
         </div>
 
-        <SaveBuildForm items={selection} />
+        {CATEGORIES.filter((c) => c.slug !== "storage").map((category) => (
+          <PartSlot
+            key={category.slug}
+            categoryName={category.name}
+            options={byCategory.get(category.slug) ?? []}
+            selected={selection[category.slug]}
+            focused={focused === category.slug}
+            stickControl={
+              category.slug === "ram"
+                ? { count: ramSticks, onChange: setRamSticks }
+                : undefined
+            }
+            onSelect={(product) =>
+              setSelection((prev) => ({ ...prev, [category.slug]: product }))
+            }
+            onClear={() =>
+              setSelection((prev) => {
+                const next = { ...prev };
+                delete next[category.slug];
+                return next;
+              })
+            }
+          />
+        ))}
+
+        {/* storage split into dedicated SSD and HDD pickers */}
+        <PartSlot
+          categoryName="SSD"
+          options={(byCategory.get("storage") ?? []).filter((p) =>
+            String(p.specs.driveType ?? "").includes("SSD"),
+          )}
+          selected={ssd}
+          focused={focused === "storage"}
+          onSelect={setSsd}
+          onClear={() => setSsd(undefined)}
+        />
+        <PartSlot
+          categoryName="HDD"
+          options={(byCategory.get("storage") ?? []).filter(
+            (p) => !String(p.specs.driveType ?? "").includes("SSD"),
+          )}
+          selected={hdd}
+          focused={focused === "storage"}
+          onSelect={setHdd}
+          onClear={() => setHdd(undefined)}
+        />
+
+        <SaveBuildForm items={buildSelection} />
       </aside>
     </div>
   );

@@ -6,10 +6,14 @@
 import { asc, inArray } from "drizzle-orm";
 
 import { db } from "@/db";
-import { products, type Product } from "@/db/schema";
+import { benchmarkData, products, type Product } from "@/db/schema";
 import { CATEGORIES } from "@/lib/catalog";
 import { checkCompatibility, type BuildSelection } from "@/lib/compatibility";
-import { estimateForBuild, RESOLUTIONS } from "@/lib/performance";
+import {
+  buildBenchmarkLookup,
+  estimateForBuild,
+  RESOLUTIONS,
+} from "@/lib/performance";
 import { formatPrice } from "@/lib/format";
 
 export type ToolResult = Record<string, unknown>;
@@ -79,7 +83,7 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
           },
           maxPrice: { type: "number", description: "Optional maximum price in US dollars" },
         },
-        required: ["query"],
+        required: [],
       },
     },
   },
@@ -167,6 +171,18 @@ export const TOOL_DEFINITIONS: ToolDefinition[] = [
 
 const VALID_CATEGORIES = new Set(CATEGORIES.map((c) => c.slug));
 
+/** Generic words that never appear in product names — ignore when matching. */
+const STOP_TOKENS = new Set([
+  "gpu", "cpu", "graphics", "card", "video", "processor", "ram", "memory",
+  "ssd", "hdd", "storage", "drive", "psu", "power", "supply", "motherboard",
+  "board", "mobo", "cooler", "cooling", "case", "chassis", "best", "good",
+  "cheap", "budget", "under", "over", "less", "than", "dollars", "dollar",
+  "price", "priced", "around", "about", "for", "with", "the", "a", "an",
+  "any", "me", "my", "want", "need", "looking", "show", "find", "list",
+  "options", "recommend", "recommendation", "part", "parts", "and", "or",
+  "build", "gaming", "new",
+]);
+
 async function executeSearch(args: Record<string, unknown>): Promise<ToolResult> {
   const query = String(args.query ?? "").toLowerCase();
   const category = typeof args.category === "string" ? args.category : undefined;
@@ -177,17 +193,28 @@ async function executeSearch(args: Record<string, unknown>): Promise<ToolResult>
   }
 
   const list = await allProducts();
+  const tokens = query
+    .split(/[^a-z0-9.]+/)
+    .filter((t) => t.length >= 2 && !STOP_TOKENS.has(t) && !/^\d+(\.\d+)?$/.test(t));
   const matches = list
     .filter((p) => (category ? p.category === category : true))
     .filter((p) => (maxPrice !== undefined ? p.priceCents <= maxPrice * 100 : true))
-    .filter((p) => `${p.brand} ${p.model}`.toLowerCase().includes(query))
+    .filter((p) => {
+      if (tokens.length === 0) return true; // generic query — category/price filters do the work
+      const haystack = `${p.brand} ${p.model} ${p.category}`.toLowerCase();
+      return tokens.some((token) => haystack.includes(token));
+    })
+    .sort((a, b) => a.priceCents - b.priceCents)
     .slice(0, 6)
     .map(publicProduct);
 
   return {
     count: matches.length,
     products: matches,
-    hint: matches.length === 0 ? "No matches — try broader keywords." : undefined,
+    hint:
+      matches.length === 0
+        ? "No matches — try broader keywords or drop the keyword and filter by category + maxPrice only."
+        : undefined,
   };
 }
 
@@ -237,7 +264,8 @@ async function executePerformance(args: Record<string, unknown>): Promise<ToolRe
     if (typeof slug === "string" && slug) slugs[category] = slug;
   }
   const { selection } = await resolveSelection(slugs);
-  const perf = estimateForBuild(selection);
+  const benchmarks = buildBenchmarkLookup(await db.select().from(benchmarkData));
+  const perf = estimateForBuild(selection, benchmarks);
   if (!perf.complete) {
     return {
       error:
@@ -245,12 +273,14 @@ async function executePerformance(args: Record<string, unknown>): Promise<ToolRe
     };
   }
   return {
+    measured: perf.measured,
     scenarios: perf.scenarios.map((s) => ({
       name: s.name,
       estimates: s.estimates.map((e) => ({
         resolution: e.resolution,
         fpsRange: `${e.fpsLow}-${e.fpsHigh}`,
-        bottleneck: e.bottleneck,
+        bottleneck:
+          e.cpuLimitPct > 0 ? `CPU limiting by ${e.cpuLimitPct}%` : e.bottleneck,
       })),
     })),
     notes: perf.notes,

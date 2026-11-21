@@ -5,6 +5,7 @@ import { notFound, redirect } from "next/navigation";
 import { FilterSidebar } from "@/components/filter-sidebar";
 import { Pagination } from "@/components/pagination";
 import { ProductCard } from "@/components/product-card";
+import { SortSelect } from "@/components/sort-select";
 import { getCategory } from "@/lib/catalog";
 import {
   allParams,
@@ -15,10 +16,9 @@ import {
 } from "@/lib/params";
 import {
   getCategoryFacets,
+  getCategoryStockCounts,
   listProducts,
   parseProductSort,
-  PRODUCT_SORTS,
-  SORT_LABELS,
   type SpecExactFilter,
   type SpecMinFilter,
 } from "@/lib/products";
@@ -95,7 +95,7 @@ export default async function CategoryPage({
   const filters = parseFilters(slug, query);
   if (!filters) notFound();
 
-  const [result, facets] = await Promise.all([
+  const [result, facets, stockCounts] = await Promise.all([
     listProducts({
       category: category.slug,
       sort,
@@ -107,6 +107,7 @@ export default async function CategoryPage({
       specMin: filters.specMin,
     }),
     getCategoryFacets(category.slug, category.filters),
+    getCategoryStockCounts(category.slug),
   ]);
 
   // Out-of-range pages (stale links, hand-edited URLs) land on the last page
@@ -128,13 +129,15 @@ export default async function CategoryPage({
       </nav>
 
       <div className="mb-6">
-        <h1 className="text-2xl font-semibold tracking-tight">
+        <h1 className="text-2xl font-semibold tracking-tight text-zinc-900">
           {category.name}
         </h1>
         <p className="mt-1 text-sm text-zinc-500">
           {result.total} {result.total === 1 ? "product" : "products"} ·{" "}
-          {category.tagline}
+          {stockCounts.inStock} in stock · {stockCounts.outOfStock} out of
+          stock
         </p>
+        <p className="mt-0.5 text-sm text-zinc-400">{category.tagline}</p>
       </div>
 
       <div className="flex flex-col gap-6 lg:flex-row">
@@ -149,28 +152,12 @@ export default async function CategoryPage({
         </aside>
 
         <div className="min-w-0 flex-1">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div
-              role="group"
-              aria-label="Sort products"
-              className="flex items-center gap-1 text-sm"
-            >
-              <span className="mr-1 text-zinc-400">Sort:</span>
-              {PRODUCT_SORTS.map((value) => (
-                <Link
-                  key={value}
-                  href={buildCategoryHref(category.slug, query, { sort: value })}
-                  aria-current={sort === value ? "true" : undefined}
-                  className={
-                    sort === value
-                      ? "rounded-full bg-zinc-900 px-3 py-1.5 font-medium text-white"
-                      : "rounded-full px-3 py-1.5 text-zinc-600 hover:bg-zinc-100"
-                  }
-                >
-                  {SORT_LABELS[value]}
-                </Link>
-              ))}
-            </div>
+          <div className="mb-4 flex flex-wrap items-center justify-end gap-3">
+            <SortSelect
+              slug={category.slug}
+              sort={sort}
+              params={query}
+            />
           </div>
 
           {result.items.length > 0 ? (

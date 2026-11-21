@@ -62,7 +62,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               defaultValue={q}
               placeholder="Search parts…"
               aria-label="Search products"
-              className="w-full rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm focus:border-blue-600 focus:outline-none"
+              className="w-full rounded-full border border-zinc-300 bg-white px-4 py-2 text-sm focus:border-zinc-900 focus:outline-none"
             />
             <button
               type="submit"

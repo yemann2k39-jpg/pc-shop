@@ -37,11 +37,21 @@ export async function listRecentBuilds(limit = 30): Promise<Build[]> {
     .limit(limit);
 }
 
+/** Builds owned by an account, newest first. */
+export async function listUserBuilds(userId: number): Promise<Build[]> {
+  return db
+    .select()
+    .from(builds)
+    .where(eq(builds.userId, userId))
+    .orderBy(desc(builds.createdAt), desc(builds.id));
+}
+
 export async function createBuild(input: {
   name: string;
   ownerName?: string;
   note?: string;
   items: Record<string, string>;
+  userId?: number;
 }): Promise<Build> {
   let lastError: unknown = null;
   // Retry only on public-id collisions; anything else is a real failure.
@@ -55,6 +65,7 @@ export async function createBuild(input: {
           ownerName: input.ownerName ?? null,
           note: input.note ?? null,
           items: input.items,
+          userId: input.userId ?? null,
         })
         .returning();
       return build;

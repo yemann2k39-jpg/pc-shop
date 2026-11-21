@@ -1,10 +1,11 @@
-﻿import type { Metadata } from "next";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { asc, inArray } from "drizzle-orm";
 
 import { db } from "@/db";
-import { products } from "@/db/schema";
+import { benchmarkData, products } from "@/db/schema";
 import { getBuildByPublicId } from "@/lib/builds";
+import { buildBenchmarkLookup } from "@/lib/performance";
 
 import { BuildClient } from "./build-client";
 
@@ -41,6 +42,8 @@ export default async function BuildPage({
     .from(products)
     .orderBy(asc(products.brand), asc(products.model));
 
+  const benchmarks = buildBenchmarkLookup(await db.select().from(benchmarkData));
+
   return (
     <div className="mx-auto w-full max-w-6xl px-4 py-8">
       <nav aria-label="Breadcrumb" className="mb-4 text-sm text-zinc-500">
@@ -68,7 +71,11 @@ export default async function BuildPage({
         </Link>
       </div>
 
-      <BuildClient products={allProducts} initialSelection={initialSelection} />
+      <BuildClient
+        products={allProducts}
+        initialSelection={initialSelection}
+        benchmarks={benchmarks}
+      />
     </div>
   );
 }

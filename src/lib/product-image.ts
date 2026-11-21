@@ -1,7 +1,8 @@
-import "server-only";
-
 import { mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
+
+// NOTE: intentionally no "server-only" here — the seed script (tsx) imports
+// this module too, and it contains no secrets, only SVG file generation.
 
 import { categoryIllustration, ILLUSTRATION_ATTRS } from "@/lib/illustrations";
 import { FALLBACK_CATEGORY, getCategory } from "@/lib/catalog";

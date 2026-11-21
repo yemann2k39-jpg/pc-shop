@@ -39,14 +39,14 @@ export function FilterSidebar({
       className="space-y-6 rounded-xl border border-zinc-200 bg-white p-4"
       aria-label="Filter products"
     >
-      {sort !== "name" ? <input type="hidden" name="sort" value={sort} /> : null}
+      {sort ? <input type="hidden" name="sort" value={sort} /> : null}
 
       <div className="flex items-center justify-between">
         <h2 className="text-sm font-semibold text-zinc-900">Filters</h2>
         {activeFilterCount > 0 ? (
           <Link
             href={buildCategoryHref(slug, query, {
-              sort: sort === "name" ? undefined : (sort as ProductSort),
+              sort: (sort as ProductSort) || undefined,
               remove: sidebarParamKeys(facets).concat("priceMin", "priceMax"),
             })}
             className="text-xs font-medium text-blue-700 hover:underline"
@@ -72,7 +72,7 @@ export function FilterSidebar({
                   name="brand"
                   value={option.value}
                   defaultChecked={allParams(query.brand).includes(option.value)}
-                  className="h-4 w-4 rounded border-zinc-300 accent-blue-700"
+                  className="h-4 w-4 rounded border-zinc-300 accent-zinc-900"
                 />
                 {option.value}
                 <span className="text-xs text-zinc-400">({option.count})</span>

@@ -14,6 +14,11 @@
 
 import type { Product } from "@/db/schema";
 import { CATEGORIES } from "@/lib/catalog";
+import {
+  approximateBottleneckPct,
+  isHighEndGpu,
+  isWeakCpu,
+} from "@/lib/performance";
 
 export type Severity = "error" | "warning" | "info";
 
@@ -260,6 +265,91 @@ const checkPsuWattage: Check = {
   },
 };
 
+/** Chipsets that only make sense on high-tier boards. */
+const PREMIUM_CHIPSETS = ["Z790", "X670E", "X870E"];
+
+const checkGpuCpuBottleneck: Check = {
+  rule: "gpuCpuBottleneck",
+  run: (sel) => {
+    const gpu = sel.gpu;
+    const cpu = sel.cpu;
+    if (!gpu || !cpu) return [];
+    if (!isHighEndGpu(gpu.slug) || !isWeakCpu(cpu.slug)) return [];
+    const pct = approximateBottleneckPct(gpu.slug, cpu.slug);
+    if (pct < 30) return [];
+    return [
+      {
+        severity: "warning",
+        parts: ["gpu", "cpu"],
+        message: `Pairing mismatch: the ${cpu.brand} ${cpu.model} will hold the ${gpu.brand} ${gpu.model} back by roughly ${pct}% at 1080p — consider a stronger CPU to use this GPU fully.`,
+      },
+    ];
+  },
+};
+
+const checkPremiumBoardDdr4: Check = {
+  rule: "premiumBoardDdr4",
+  run: (sel) => {
+    const motherboard = sel.motherboard;
+    const ram = sel.ram;
+    if (!motherboard || !ram) return [];
+    const chipset = specString(motherboard, "chipset");
+    if (!chipset || !PREMIUM_CHIPSETS.includes(chipset)) return [];
+    if (specString(ram, "memoryType") !== "DDR4") return [];
+    return [
+      {
+        severity: "warning",
+        parts: ["motherboard", "ram"],
+        message: `You picked a top-tier ${chipset} board but paired it with DDR4 memory — the money spent on the board is wasted while the DDR4 kit caps bandwidth. A DDR5 board + kit would cost similar and perform better.`,
+      },
+    ];
+  },
+};
+
+const checkHighDrawPsuHeadroom: Check = {
+  rule: "highDrawPsuHeadroom",
+  run: (sel) => {
+    const gpu = sel.gpu;
+    const psu = sel.psu;
+    const wattage = psu ? specNumber(psu, "wattageW") : undefined;
+    const gpuW = gpu ? specNumber(gpu, "tdpW") : undefined;
+    if (!gpu || wattage === undefined || gpuW === undefined || gpuW < 280)
+      return [];
+    const draw = estimateSystemDraw(sel);
+    if (draw === undefined) return [];
+    if (wattage >= draw * 1.3) return [];
+    return [
+      {
+        severity: "warning",
+        parts: ["gpu", "psu"],
+        message: `The ${gpu.brand} ${gpu.model} is a high-draw card (~${gpuW}W) — your ${wattage}W PSU leaves under 30% headroom over the ~${draw}W build draw and may trip protection under spikes.`,
+      },
+    ];
+  },
+};
+
+const FLAGSHIP_CPU_TDP_W = 250;
+
+const checkFlagshipCooling: Check = {
+  rule: "flagshipCooling",
+  run: (sel) => {
+    const cpu = sel.cpu;
+    const cooler = sel.cooler;
+    if (!cpu || !cooler) return [];
+    const cpuW = specNumber(cpu, "tdpW") ?? 0;
+    if (cpuW < FLAGSHIP_CPU_TDP_W) return [];
+    const coolerW = specNumber(cooler, "tdpRatingW");
+    if (coolerW === undefined || coolerW >= cpuW * 0.9) return [];
+    return [
+      {
+        severity: "warning",
+        parts: ["cpu", "cooler"],
+        message: `The ${cpu.brand} ${cpu.model} draws ~${cpuW}W under load — the ${cooler.brand} ${cooler.model} (rated ~${coolerW}W) will likely let it throttle. Pick a 360mm AIO or top-tier air cooler.`,
+      },
+    ];
+  },
+};
+
 const SEVERITY_ORDER: Record<Severity, number> = { error: 0, warning: 1, info: 2 };
 
 const runChecks: Check[] = [
@@ -272,6 +362,10 @@ const runChecks: Check[] = [
   checkCoolerHeight,
   checkDisplayOutput,
   checkPsuWattage,
+  checkGpuCpuBottleneck,
+  checkPremiumBoardDdr4,
+  checkHighDrawPsuHeadroom,
+  checkFlagshipCooling,
 ];
 
 /**

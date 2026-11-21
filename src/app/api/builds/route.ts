@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { getCurrentUser } from "@/lib/account-auth";
 import { createBuild, validateBuildItems } from "@/lib/builds";
 
 const MAX_FIELD = 200;
@@ -43,11 +44,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: validation.error }, { status: 400 });
   }
 
+  const user = await getCurrentUser();
   const build = await createBuild({
     name: body.name.trim(),
     ownerName: nonEmptyString(body.ownerName) ? String(body.ownerName).trim() : undefined,
     note: nonEmptyString(body.note, 500) ? String(body.note).trim() : undefined,
     items,
+    userId: user?.id,
   });
 
   return NextResponse.json({

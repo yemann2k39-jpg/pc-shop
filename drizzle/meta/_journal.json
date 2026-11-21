@@ -36,6 +36,34 @@
       "when": 1791575065316,
       "tag": "0004_next_lorna_dane",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1792071171203,
+      "tag": "0005_eager_blonde_phantom",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1792680387551,
+      "tag": "0006_smooth_mister_sinister",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1792680816697,
+      "tag": "0007_gray_galactus",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1793711194790,
+      "tag": "0008_zippy_krista_starr",
+      "breakpoints": true
     }
   ]
 }

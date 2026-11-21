@@ -309,6 +309,198 @@ const PRODUCTS: SeedProduct[] = [
     category: "case", brand: "Fractal Design", model: "Pop Mini Silent", price: 109, stock: "out_of_stock",
     specs: { formFactorSupport: ["Micro-ATX", "Mini-ITX"], maxGpuLengthMm: 365, maxCoolerHeightMm: 170 },
   },
+
+  /* ---------------------------------------------------------------- */
+  /* Catalog expansion (round 2) — budget to halo options per category */
+  /* ---------------------------------------------------------------- */
+
+  // CPUs (more)
+  {
+    category: "cpu", brand: "AMD", model: "Ryzen 5 8600G", price: 189,
+    specs: { socket: "AM5", cores: 6, threads: 12, boostClockGHz: 5.0, tdpW: 65, integratedGraphics: true },
+  },
+  {
+    category: "cpu", brand: "AMD", model: "Ryzen 7 9700X", price: 359,
+    specs: { socket: "AM5", cores: 8, threads: 16, boostClockGHz: 5.5, tdpW: 65, integratedGraphics: true },
+  },
+  {
+    category: "cpu", brand: "AMD", model: "Ryzen 9 9950X", price: 649,
+    specs: { socket: "AM5", cores: 16, threads: 32, boostClockGHz: 5.7, tdpW: 170, integratedGraphics: true },
+  },
+  {
+    category: "cpu", brand: "Intel", model: "Core i3-12100F", price: 94,
+    specs: { socket: "LGA1700", cores: 4, threads: 8, boostClockGHz: 4.3, tdpW: 58, integratedGraphics: false },
+  },
+  {
+    category: "cpu", brand: "Intel", model: "Core i5-13400F", price: 179,
+    specs: { socket: "LGA1700", cores: 10, threads: 16, boostClockGHz: 4.6, tdpW: 65, integratedGraphics: false },
+  },
+  {
+    category: "cpu", brand: "Intel", model: "Core i7-13700K", price: 339,
+    specs: { socket: "LGA1700", cores: 16, threads: 24, boostClockGHz: 5.4, tdpW: 125, integratedGraphics: true },
+  },
+
+  // GPUs (more)
+  {
+    category: "gpu", brand: "ASUS", model: "Dual RTX 4060 Ti", price: 399,
+    specs: { chipset: "GeForce RTX 4060 Ti", vramGB: 8, memoryType: "GDDR6", lengthMm: 242, tdpW: 160, recommendedPsuW: 600 },
+  },
+  {
+    category: "gpu", brand: "Gigabyte", model: "Gaming OC RTX 4070", price: 549,
+    specs: { chipset: "GeForce RTX 4070", vramGB: 12, memoryType: "GDDR6X", lengthMm: 295, tdpW: 200, recommendedPsuW: 650 },
+  },
+  {
+    category: "gpu", brand: "Zotac", model: "Trinity RTX 5080", price: 1149, stock: "low_stock",
+    specs: { chipset: "GeForce RTX 5080", vramGB: 16, memoryType: "GDDR7", lengthMm: 304, tdpW: 360, recommendedPsuW: 850 },
+  },
+  {
+    category: "gpu", brand: "ASUS", model: "TUF RTX 5090", price: 2299, stock: "low_stock",
+    specs: { chipset: "GeForce RTX 5090", vramGB: 32, memoryType: "GDDR7", lengthMm: 347, tdpW: 575, recommendedPsuW: 1000 },
+  },
+  {
+    category: "gpu", brand: "XFX", model: "Speedster SWFT 210 RX 7700 XT", price: 429,
+    specs: { chipset: "Radeon RX 7700 XT", vramGB: 12, memoryType: "GDDR6", lengthMm: 310, tdpW: 245, recommendedPsuW: 700 },
+  },
+  {
+    category: "gpu", brand: "ASRock", model: "Challenger RX 7600 XT", price: 329,
+    specs: { chipset: "Radeon RX 7600 XT", vramGB: 16, memoryType: "GDDR6", lengthMm: 279, tdpW: 190, recommendedPsuW: 600 },
+  },
+
+  // Motherboards (more)
+  {
+    category: "motherboard", brand: "ASRock", model: "B650M-HDV/M.2", price: 89,
+    specs: { socket: "AM5", chipset: "B650", formFactor: "Micro-ATX", memoryType: "DDR5", maxMemoryGB: 96 },
+  },
+  {
+    category: "motherboard", brand: "Gigabyte", model: "X870E Aorus Elite", price: 329,
+    specs: { socket: "AM5", chipset: "X870E", formFactor: "ATX", memoryType: "DDR5", maxMemoryGB: 192 },
+  },
+  {
+    category: "motherboard", brand: "MSI", model: "PRO B650M-P", price: 99,
+    specs: { socket: "AM5", chipset: "B650", formFactor: "Micro-ATX", memoryType: "DDR5", maxMemoryGB: 128 },
+  },
+  {
+    category: "motherboard", brand: "Gigabyte", model: "Z790 D DDR4", price: 169,
+    specs: { socket: "LGA1700", chipset: "Z790", formFactor: "ATX", memoryType: "DDR4", maxMemoryGB: 128 },
+  },
+  {
+    category: "motherboard", brand: "ASUS", model: "TUF Gaming Z790-Plus WiFi", price: 289,
+    specs: { socket: "LGA1700", chipset: "Z790", formFactor: "ATX", memoryType: "DDR5", maxMemoryGB: 192 },
+  },
+  {
+    category: "motherboard", brand: "ASUS", model: "Prime H610M-E D4", price: 79,
+    specs: { socket: "LGA1700", chipset: "H610", formFactor: "Micro-ATX", memoryType: "DDR4", maxMemoryGB: 64 },
+  },
+
+  // RAM (more)
+  {
+    category: "ram", brand: "G.Skill", model: "Flare X5 32GB DDR5-6000 CL30", price: 99,
+    specs: { memoryType: "DDR5", capacityGB: 32, speedMHz: 6000, moduleCount: 2 },
+  },
+  {
+    category: "ram", brand: "Kingston", model: "Fury Beast 16GB DDR5-5600", price: 49,
+    specs: { memoryType: "DDR5", capacityGB: 16, speedMHz: 5600, moduleCount: 2 },
+  },
+  {
+    category: "ram", brand: "Corsair", model: "Vengeance 96GB DDR5-5600", price: 299,
+    specs: { memoryType: "DDR5", capacityGB: 96, speedMHz: 5600, moduleCount: 2 },
+  },
+  {
+    category: "ram", brand: "TeamGroup", model: "Vulcan 16GB DDR4-3200", price: 36,
+    specs: { memoryType: "DDR4", capacityGB: 16, speedMHz: 3200, moduleCount: 2 },
+  },
+  {
+    category: "ram", brand: "Crucial", model: "Pro 64GB DDR4-3200", price: 109,
+    specs: { memoryType: "DDR4", capacityGB: 64, speedMHz: 3200, moduleCount: 2 },
+  },
+
+  // Storage (more)
+  {
+    category: "storage", brand: "WD", model: "Black SN770 2TB", price: 119,
+    specs: { driveType: "NVMe SSD", capacityGB: 2000, readMbps: 5150 },
+  },
+  {
+    category: "storage", brand: "Crucial", model: "T500 2TB", price: 139,
+    specs: { driveType: "NVMe SSD", capacityGB: 2000, readMbps: 7400 },
+  },
+  {
+    category: "storage", brand: "Kingston", model: "NV3 1TB", price: 55,
+    specs: { driveType: "NVMe SSD", capacityGB: 1000, readMbps: 6000 },
+  },
+  {
+    category: "storage", brand: "Seagate", model: "IronWolf 8TB HDD", price: 179,
+    specs: { driveType: "HDD", capacityGB: 8000, readMbps: 210 },
+  },
+  {
+    category: "storage", brand: "WD", model: "Black 6TB HDD", price: 219, stock: "low_stock",
+    specs: { driveType: "HDD", capacityGB: 6000, readMbps: 250 },
+  },
+
+  // PSUs (more)
+  {
+    category: "psu", brand: "Corsair", model: "RM750e 750W", price: 99,
+    specs: { wattageW: 750, efficiencyCert: "80 Plus Gold", modular: "Fully modular" },
+  },
+  {
+    category: "psu", brand: "Seasonic", model: "Focus GX-1000", price: 169,
+    specs: { wattageW: 1000, efficiencyCert: "80 Plus Gold", modular: "Fully modular" },
+  },
+  {
+    category: "psu", brand: "be quiet!", model: "Pure Power 12 M 850W", price: 119,
+    specs: { wattageW: 850, efficiencyCert: "80 Plus Gold", modular: "Fully modular" },
+  },
+  {
+    category: "psu", brand: "Thermaltake", model: "Smart 500W", price: 39,
+    specs: { wattageW: 500, efficiencyCert: "80 Plus White", modular: "Non-modular" },
+  },
+  {
+    category: "psu", brand: "Corsair", model: "HX1500i 1500W", price: 389, stock: "low_stock",
+    specs: { wattageW: 1500, efficiencyCert: "80 Plus Platinum", modular: "Fully modular" },
+  },
+
+  // Coolers (more)
+  {
+    category: "cooler", brand: "Thermalright", model: "Burst Assassin 120", price: 39,
+    specs: { coolerType: "Air", tdpRatingW: 220, heightMm: 155, supportedSockets: ["AM5", "LGA1700"] },
+  },
+  {
+    category: "cooler", brand: "Noctua", model: "NH-L9a-AM5", price: 55,
+    specs: { coolerType: "Air", tdpRatingW: 100, heightMm: 37, supportedSockets: ["AM5"] },
+  },
+  {
+    category: "cooler", brand: "DeepCool", model: "LE520", price: 30,
+    specs: { coolerType: "Air", tdpRatingW: 180, heightMm: 157, supportedSockets: ["AM5", "LGA1700"] },
+  },
+  {
+    category: "cooler", brand: "Arctic", model: "Liquid Freezer III 240", price: 99,
+    specs: { coolerType: "AIO", tdpRatingW: 300, radiatorMm: 240, supportedSockets: ["AM5", "LGA1700"] },
+  },
+  {
+    category: "cooler", brand: "NZXT", model: "Kraken Elite 360 RGB", price: 299,
+    specs: { coolerType: "AIO", tdpRatingW: 350, radiatorMm: 360, supportedSockets: ["AM5", "LGA1700"] },
+  },
+
+  // Cases (more)
+  {
+    category: "case", brand: "Fractal Design", model: "Pop Air RGB", price: 89,
+    specs: { formFactorSupport: ["ATX", "Micro-ATX", "Mini-ITX"], maxGpuLengthMm: 380, maxCoolerHeightMm: 170 },
+  },
+  {
+    category: "case", brand: "Lian Li", model: "O11 Dynamic EVO", price: 169,
+    specs: { formFactorSupport: ["ATX", "Micro-ATX", "Mini-ITX"], maxGpuLengthMm: 423, maxCoolerHeightMm: 167 },
+  },
+  {
+    category: "case", brand: "be quiet!", model: "Pure Base 500DX", price: 99,
+    specs: { formFactorSupport: ["ATX", "Micro-ATX", "Mini-ITX"], maxGpuLengthMm: 370, maxCoolerHeightMm: 175 },
+  },
+  {
+    category: "case", brand: "Cooler Master", model: "NR200P", price: 99,
+    specs: { formFactorSupport: ["Mini-ITX"], maxGpuLengthMm: 330, maxCoolerHeightMm: 155 },
+  },
+  {
+    category: "case", brand: "Montech", model: "XR Pro", price: 59,
+    specs: { formFactorSupport: ["ATX", "Micro-ATX"], maxGpuLengthMm: 380, maxCoolerHeightMm: 165 },
+  },
 ];
 
 /* ------------------------------------------------------------------ */
@@ -371,6 +563,9 @@ const seed = sqlite.transaction(() => {
 
   for (const product of PRODUCTS) {
     const slug = slugify(`${product.brand} ${product.model}`);
+    // Deterministic pseudo-popularity so "Best selling" has stable demo data.
+    const popularity =
+      5 + (slug.split("").reduce((sum, ch) => sum + ch.charCodeAt(0), 0) % 76);
     db.insert(products)
       .values({
         slug,
@@ -378,6 +573,7 @@ const seed = sqlite.transaction(() => {
         brand: product.brand,
         model: product.model,
         priceCents: Math.round(product.price * 100),
+        popularity,
         stockStatus: product.stock ?? "in_stock",
         imageUrl: `/images/products/${slug}.svg`,
         specs: product.specs,

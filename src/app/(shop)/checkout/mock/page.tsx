@@ -66,7 +66,7 @@ function MockPaymentInner() {
             type="button"
             onClick={() => pay("approve")}
             disabled={processing || !orderNumber}
-            className="rounded-lg bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-800 disabled:opacity-50"
+            className="rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-white hover:bg-zinc-700 disabled:opacity-50"
           >
             {processing ? "Processing…" : "Approve payment"}
           </button>

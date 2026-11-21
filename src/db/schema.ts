@@ -22,6 +22,8 @@ export const products = sqliteTable(
      * on sale (priceCents is the discounted, charged price).
      */
     compareAtCents: integer("compare_at_cents"),
+    /** Demo "sales" ranking for the Best selling sort (higher = more sold). */
+    popularity: integer("popularity").notNull().default(0),
     stockStatus: text("stock_status")
       .$type<StockStatus>()
       .notNull()
@@ -140,6 +142,8 @@ export const builds = sqliteTable("builds", {
   items: text("items", { mode: "json" })
     .$type<Record<string, string>>()
     .notNull(),
+  /** Owning account, when saved while signed in (null = anonymous share). */
+  userId: integer("user_id").references(() => users.id, { onDelete: "set null" }),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .$defaultFn(() => new Date()),
@@ -147,3 +151,70 @@ export const builds = sqliteTable("builds", {
 
 export type Build = typeof builds.$inferSelect;
 export type NewBuild = typeof builds.$inferInsert;
+
+/* -------------------------------- Users -------------------------------- */
+
+export const users = sqliteTable("users", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  /** Lowercased, trimmed — the login identity. */
+  email: text("email").notNull().unique(),
+  /** Display name shown in the header and account page. */
+  name: text("name").notNull(),
+  /** scrypt hash: "scrypt:<saltHex>:<hashHex>". */
+  passwordHash: text("password_hash").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .$defaultFn(() => new Date()),
+});
+
+export type User = typeof users.$inferSelect;
+export type NewUser = typeof users.$inferInsert;
+
+/* ------------------------------- Sessions ------------------------------ */
+
+export const sessions = sqliteTable(
+  "sessions",
+  {
+    /** 256-bit random token; stored in the user's httpOnly cookie. */
+    id: text("id").primaryKey(),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    expiresAt: integer("expires_at", { mode: "timestamp" }).notNull(),
+    createdAt: integer("created_at", { mode: "timestamp" })
+      .notNull()
+      .$defaultFn(() => new Date()),
+  },
+  (table) => [index("sessions_user_idx").on(table.userId)],
+);
+
+export type Session = typeof sessions.$inferSelect;
+export type NewSession = typeof sessions.$inferInsert;
+
+/* --------------------------- Benchmark data ---------------------------- */
+
+export const benchmarkData = sqliteTable(
+  "benchmark_data",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    /** Product slug (GPU or CPU). */
+    slug: text("slug").notNull(),
+    /** "gpu" or "cpu". */
+    kind: text("kind").$type<"gpu" | "cpu">().notNull(),
+    /** "aaa" or "esports". */
+    scenario: text("scenario").$type<"aaa" | "esports">().notNull(),
+    /** "1080p" | "1440p" | "4K"; null = applies to every resolution (CPU caps). */
+    resolution: text("resolution"),
+    /** Measured/aggregate average FPS for this cell. */
+    avgFps: integer("avg_fps").notNull(),
+    /** Where the number came from. */
+    source: text("source").notNull(),
+  },
+  (table) => [
+    index("benchmark_slug_idx").on(table.slug),
+    index("benchmark_lookup_idx").on(table.kind, table.scenario, table.resolution),
+  ],
+);
+
+export type BenchmarkRow = typeof benchmarkData.$inferSelect;
+export type NewBenchmarkRow = typeof benchmarkData.$inferInsert;

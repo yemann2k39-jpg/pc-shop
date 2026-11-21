@@ -22,7 +22,31 @@ export type ChatMessage = {
 };
 
 const MAX_TOOL_ROUNDS = 6;
-const MAX_TOOL_RESULT_CHARS = 3500;
+const MAX_TOOL_RESULT_CHARS = 2000;
+/** Groq free tier is 8000 TPM — keep per-request token usage lean. */
+const MAX_COMPLETION_TOKENS = 800;
+const MAX_HISTORY_CHARS = 1200;
+/** Trim persisted history so old turns don't eat the token budget. */
+function trimHistory(history: ChatMessage[]): ChatMessage[] {
+  const kept: ChatMessage[] = [];
+  let chars = 0;
+  for (let i = history.length - 1; i >= 0; i -= 1) {
+    const length = history[i].content.length;
+    if (chars + length > MAX_HISTORY_CHARS && kept.length >= 2) break;
+    chars += length;
+    kept.unshift(history[i]);
+    if (kept.length >= 8) break;
+  }
+  return kept;
+}
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Parses Groq's "Please try again in X.XXs" hint out of a 429 body. */
+function retryDelayMs(body: string): number {
+  const match = /try again in ([\d.]+)s/.exec(body);
+  return match ? Math.min(10_000, Math.ceil(parseFloat(match[1]) * 1000) + 250) : 2000;
+}
 
 export type AssistantContext = {
   pathname: string;
@@ -108,29 +132,44 @@ export async function runAssistantTurn(
           : ""
       }`,
     },
-    ...history,
+    ...trimHistory(history),
   ];
 
   const toolsUsed: string[] = [];
 
+  const callLlm = async (): Promise<Response> => {
+    // 429-aware retry: Groq TPM limits are per-minute; wait out the window
+    // instead of failing the whole turn.
+    let attempt = 0;
+    for (;;) {
+      const response = await fetch(`${config.baseUrl}/chat/completions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${config.apiKey}`,
+        },
+        body: JSON.stringify({
+          model: config.model,
+          messages,
+          tools: TOOL_DEFINITIONS,
+          tool_choice: "auto",
+          temperature: 0.2,
+          max_tokens: MAX_COMPLETION_TOKENS,
+        }),
+        signal: AbortSignal.timeout(45_000),
+      });
+      if (response.status === 429 && attempt < 2) {
+        const body = await response.text().catch(() => "");
+        await sleep(retryDelayMs(body));
+        attempt += 1;
+        continue;
+      }
+      return response;
+    }
+  };
+
   for (let round = 0; round < MAX_TOOL_ROUNDS; round += 1) {
-    const response = await fetch(`${config.baseUrl}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${config.apiKey}`,
-      },
-      body: JSON.stringify({
-        model: config.model,
-        messages,
-        tools: TOOL_DEFINITIONS,
-        tool_choice: "auto",
-        temperature: 0.2,
-        max_tokens: 2500,
-        reasoning_effort: "low",
-      }),
-      signal: AbortSignal.timeout(45_000),
-    });
+    const response = await callLlm();
 
     if (!response.ok) {
       const body = await response.text().catch(() => "");

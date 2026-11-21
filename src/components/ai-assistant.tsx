@@ -11,6 +11,61 @@ type Message = {
 
 const CHAT_STORAGE_KEY = "pc-shop-ai-chat";
 
+/**
+ * Support-agent bust (headset + mic + shoulders), drawn from the user's
+ * reference image in strict black & white. `fg` is the icon color and
+ * `face` should match the surface behind it so the face reads as a cutout.
+ */
+function AgentIcon({
+  className,
+  fg = "currentColor",
+  face = "#18181b",
+}: {
+  className?: string;
+  fg?: string;
+  face?: string;
+}) {
+  return (
+    <svg viewBox="0 0 48 48" fill="none" className={className} aria-hidden="true">
+      {/* shoulders */}
+      <path
+        d="M6.4 47.4c.6-8 7.4-12.2 17.6-12.2s17 4.2 17.6 12.2v.2H6.4v-.2Z"
+        fill={fg}
+      />
+      {/* long hair framing the face */}
+      <path
+        d="M12 34c-1.8-3.2-2.8-9.4-2.8-15.4C9.2 8.6 15 4.6 24 4.6s14.8 4 14.8 14c0 6-1 12.2-2.8 15.4-2.1 1.2-4.4 1.6-6.6 1.2l.9-12.6h-12.6l.9 12.6c-2.2.4-4.5 0-6.6-1.2Z"
+        fill={fg}
+      />
+      {/* face */}
+      <ellipse cx="24" cy="20.2" rx="7.7" ry="8.7" fill={face} />
+      {/* side-swept fringe */}
+      <path
+        d="M16.4 18.6c.9-5.4 3.9-8.4 7.6-8.4s6.7 3 7.6 8.4c-2.1-2.6-4.6-3.9-7.6-3.9s-5.5 1.3-7.6 3.9Z"
+        fill={fg}
+      />
+      {/* headset band */}
+      <path
+        d="M13.2 12.4C14.8 6.8 18.8 4.2 24 4.2s9.2 2.6 10.8 8.2"
+        stroke={fg}
+        strokeWidth="2.4"
+        strokeLinecap="round"
+      />
+      {/* ear pads */}
+      <rect x="11.6" y="14.2" width="4.2" height="7.8" rx="1.9" fill={fg} />
+      <rect x="32.2" y="14.2" width="4.2" height="7.8" rx="1.9" fill={fg} />
+      {/* mic boom + tip */}
+      <path
+        d="M34.4 22.6c.3 3-1.3 5.3-4.6 6.3"
+        stroke={fg}
+        strokeWidth="1.8"
+        strokeLinecap="round"
+      />
+      <rect x="27" y="28" width="4.6" height="2.8" rx="1.4" fill={fg} />
+    </svg>
+  );
+}
+
 function loadStoredMessages(): Message[] {
   try {
     const raw = sessionStorage.getItem(CHAT_STORAGE_KEY);
@@ -165,28 +220,15 @@ export function AiAssistant() {
 
   return (
     <>
-      {/* Floating button */}
+      {/* Floating assistant button */}
       {!open ? (
         <button
           type="button"
           onClick={() => setOpen(true)}
           aria-label="Open the PC Shop assistant"
-          className="fixed bottom-5 right-5 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-blue-700 text-white shadow-lg transition-transform hover:scale-105"
+          className="fixed bottom-5 right-5 z-50 flex items-center justify-center rounded-full bg-zinc-900 p-3.5 text-white shadow-lg transition-transform hover:scale-105"
         >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            className="h-6 w-6"
-            aria-hidden="true"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a5.969 5.969 0 0 1-.474-.065 4.48 4.48 0 0 0 .978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z"
-            />
-          </svg>
+          <AgentIcon className="h-8 w-8" />
         </button>
       ) : null}
 
@@ -194,11 +236,16 @@ export function AiAssistant() {
       {open ? (
         <div className="fixed bottom-5 right-5 z-50 flex h-[32rem] w-[22rem] flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl">
           <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-900 px-4 py-3">
-            <div>
-              <p className="text-sm font-semibold text-white">PC Shop assistant</p>
-              <p className="text-[11px] text-zinc-400">
-                Ask me anything about PC parts and builds
-              </p>
+            <div className="flex items-center gap-2.5">
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-white">
+                <AgentIcon className="h-7 w-7" face="#f4f4f5" fg="#18181b" />
+              </span>
+              <div>
+                <p className="text-sm font-semibold text-white">PC Shop assistant</p>
+                <p className="text-[11px] text-zinc-400">
+                  Ask me anything about PC parts and builds
+                </p>
+              </div>
             </div>
             <div className="flex items-center gap-1">
               <button
@@ -223,10 +270,13 @@ export function AiAssistant() {
 
           <div ref={listRef} className="flex-1 space-y-3 overflow-y-auto p-3">
             {messages.length === 0 ? (
-              <div className="rounded-lg bg-zinc-50 p-3 text-sm text-zinc-600">
-                Hi! I can help you pick parts, check compatibility, estimate
-                performance, and find parts that fit your build. What are you
-                looking for?
+              <div className="rounded-lg bg-zinc-50 p-3 text-center text-sm text-zinc-600">
+                <AgentIcon className="mx-auto h-14 w-14" fg="#a1a1aa" face="#f4f4f5" />
+                <p className="mt-2">
+                  Hi! I can help you pick parts, check compatibility, estimate
+                  performance, and find parts that fit your build. What are you
+                  looking for?
+                </p>
               </div>
             ) : null}
             {messages.map((message, index) => (
@@ -234,7 +284,7 @@ export function AiAssistant() {
                 key={index}
                 className={
                   message.role === "user"
-                    ? "ml-6 rounded-2xl rounded-br-sm bg-blue-700 px-3 py-2 text-sm text-white"
+                    ? "ml-6 rounded-2xl rounded-br-sm bg-zinc-900 px-3 py-2 text-sm text-white"
                     : "mr-2 rounded-2xl rounded-bl-sm bg-zinc-100 px-3 py-2 text-sm text-zinc-800"
                 }
               >
@@ -270,15 +320,26 @@ export function AiAssistant() {
               onChange={(event) => setInput(event.target.value)}
               placeholder="Ask about parts or your build…"
               aria-label="Message the assistant"
-              className="w-full rounded-full border border-zinc-300 px-3 py-2 text-sm focus:border-blue-600 focus:outline-none"
+              className="w-full rounded-full border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:outline-none"
             />
             <button
               type="submit"
               disabled={loading || !input.trim()}
               aria-label="Send message"
-              className="rounded-full bg-blue-700 px-3 py-2 text-sm font-medium text-white hover:bg-blue-800 disabled:opacity-50"
+              className="rounded-full bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50"
             >
-              ➤
+              <svg
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-4 w-4"
+                aria-hidden="true"
+              >
+                <path d="M3 10h13M11 5l5 5-5 5" />
+              </svg>
             </button>
           </form>
         </div>
